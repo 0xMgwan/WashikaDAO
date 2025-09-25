@@ -1,0 +1,105 @@
+[project]
+name = "washika-dao"
+description = "WashikaDAO - A decentralized protocol on Stacks for marginalized communities"
+authors = ["WashikaDAO Team"]
+telemetry = false
+cache_dir = "./.cache"
+requirements = []
+
+[contracts.sip010-ft-trait]
+path = "contracts/traits/sip010-ft-trait.clar"
+clarity_version = 2
+epoch = "2.4"
+
+[contracts.oracle-price-trait]
+path = "contracts/traits/oracle-price-trait.clar"
+clarity_version = 2
+epoch = "2.4"
+
+[contracts.dao-governable-trait]
+path = "contracts/traits/dao-governable-trait.clar"
+clarity_version = 2
+epoch = "2.4"
+
+[contracts.market-trait]
+path = "contracts/traits/market-trait.clar"
+clarity_version = 2
+epoch = "2.4"
+
+[contracts.governance-token]
+path = "contracts/governance-token.clar"
+clarity_version = 2
+epoch = "2.4"
+depends_on = ["sip010-ft-trait"]
+
+[contracts.washika-dao]
+path = "contracts/washika-dao.clar"
+clarity_version = 2
+epoch = "2.4"
+depends_on = ["governance-token", "dao-governable-trait"]
+
+[contracts.timelock]
+path = "contracts/timelock.clar"
+clarity_version = 2
+epoch = "2.4"
+depends_on = ["dao-governable-trait"]
+
+[contracts.treasury]
+path = "contracts/treasury.clar"
+clarity_version = 2
+epoch = "2.4"
+depends_on = ["dao-governable-trait", "sip010-ft-trait"]
+
+[contracts.savings-stx]
+path = "contracts/savings-stx.clar"
+clarity_version = 2
+epoch = "2.4"
+depends_on = ["dao-governable-trait"]
+
+[contracts.savings-sbtc]
+path = "contracts/savings-sbtc.clar"
+clarity_version = 2
+epoch = "2.4"
+depends_on = ["dao-governable-trait", "sip010-ft-trait"]
+
+[contracts.stacking-strategy]
+path = "contracts/stacking-strategy.clar"
+clarity_version = 2
+epoch = "2.4"
+depends_on = ["dao-governable-trait"]
+
+[contracts.lending-core]
+path = "contracts/lending-core.clar"
+clarity_version = 2
+epoch = "2.4"
+depends_on = ["dao-governable-trait", "market-trait", "oracle-price-trait", "sip010-ft-trait"]
+
+[contracts.interest-model-kink]
+path = "contracts/interest-model-kink.clar"
+clarity_version = 2
+epoch = "2.4"
+
+[contracts.liquidation]
+path = "contracts/liquidation.clar"
+clarity_version = 2
+epoch = "2.4"
+depends_on = ["lending-core", "oracle-price-trait"]
+
+[contracts.oracle-aggregator]
+path = "contracts/oracle-aggregator.clar"
+clarity_version = 2
+epoch = "2.4"
+depends_on = ["oracle-price-trait", "dao-governable-trait"]
+
+[repl]
+costs_version = 2
+parser_version = 2
+
+[repl.analysis]
+passes = ["check_checker"]
+
+[repl.analysis.check_checker]
+strict = false
+trusted_sender = false
+trusted_caller = false
+callee_filter = false
