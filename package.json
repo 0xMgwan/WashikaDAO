@@ -1,0 +1,41 @@
+{
+  "name": "washika-dao",
+  "version": "1.0.0",
+  "description": "A decentralized protocol on Stacks for marginalized communities",
+  "main": "index.js",
+  "scripts": {
+    "test": "clarinet test",
+    "check": "clarinet check",
+    "console": "clarinet console",
+    "dev:frontend": "cd frontend && npm run dev",
+    "build:frontend": "cd frontend && npm run build",
+    "install:frontend": "cd frontend && npm install",
+    "deploy:testnet": "clarinet deployments apply --testnet",
+    "deploy:mainnet": "clarinet deployments apply --mainnet"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/0xMgwan/WashikaDAO.git"
+  },
+  "keywords": [
+    "stacks",
+    "bitcoin",
+    "defi",
+    "dao",
+    "governance",
+    "lending",
+    "savings",
+    "pox",
+    "sbtc",
+    "clarity"
+  ],
+  "author": "WashikaDAO Team",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/0xMgwan/WashikaDAO/issues"
+  },
+  "homepage": "https://github.com/0xMgwan/WashikaDAO#readme",
+  "devDependencies": {
+    "@types/node": "^20.0.0"
+  }
+}
