@@ -74,26 +74,32 @@ export const useCommunityPool = (userAddress?: string) => {
 
         // Check if user is a member
         if (userAddress) {
-          const isMemberResult = await callReadOnlyFunction({
-            contractAddress: CONTRACT_ADDRESS,
-            contractName: CONTRACT_NAME,
-            functionName: 'is-member',
-            functionArgs: [],
-            network,
-            senderAddress: userAddress,
-          });
-          isMember = cvToJSON(isMemberResult).value === true;
+          try {
+            const { principalCV } = await import('@stacks/transactions');
+            
+            const isMemberResult = await callReadOnlyFunction({
+              contractAddress: CONTRACT_ADDRESS,
+              contractName: CONTRACT_NAME,
+              functionName: 'is-member',
+              functionArgs: [principalCV(userAddress)],
+              network,
+              senderAddress: userAddress,
+            });
+            isMember = cvToJSON(isMemberResult).value === true;
 
-          // Get user's total contributions
-          const totalContribResult = await callReadOnlyFunction({
-            contractAddress: CONTRACT_ADDRESS,
-            contractName: CONTRACT_NAME,
-            functionName: 'get-member-total',
-            functionArgs: [],
-            network,
-            senderAddress: userAddress,
-          });
-          yourTotalContributions = Number(cvToJSON(totalContribResult).value);
+            // Get user's total contributions
+            const totalContribResult = await callReadOnlyFunction({
+              contractAddress: CONTRACT_ADDRESS,
+              contractName: CONTRACT_NAME,
+              functionName: 'get-member-total',
+              functionArgs: [principalCV(userAddress)],
+              network,
+              senderAddress: userAddress,
+            });
+            yourTotalContributions = Number(cvToJSON(totalContribResult).value);
+          } catch (error) {
+            console.error('Error fetching user data:', error);
+          }
         }
 
         setPoolData({

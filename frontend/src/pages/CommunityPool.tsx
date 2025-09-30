@@ -58,6 +58,11 @@ const CommunityPool: React.FC = () => {
       return;
     }
 
+    if (!poolData.isMember) {
+      toast.error('You must join the pool first before contributing!');
+      return;
+    }
+
     if (!contributionAmount || parseFloat(contributionAmount) <= 0) {
       toast.error('Please enter a valid amount');
       return;
@@ -205,6 +210,14 @@ const CommunityPool: React.FC = () => {
             Contribute STX to this week's pool. All contributions are pooled together and 
             distributed proportionally at the end of the month.
           </p>
+
+          {!poolData.isMember && !poolData.loading && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+              <p className="text-yellow-800 text-sm">
+                ⚠️ You must join the pool first before you can contribute!
+              </p>
+            </div>
+          )}
 
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">
