@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Users, Calendar, TrendingUp, DollarSign, ArrowRight, CheckCircle } from 'lucide-react';
 import { useStacks } from '../hooks/useStacks';
-import { useRoscaPool } from '../hooks/useRoscaPool';
 import { usePoolFactory } from '../hooks/usePoolFactory';
+import { usePoolData } from '../hooks/usePoolData';
 import { openContractCall } from '@stacks/connect';
 import { PostConditionMode } from '@stacks/transactions';
 import { StacksTestnet } from '@stacks/network';
@@ -16,7 +16,8 @@ const CommunityPool: React.FC = () => {
   const { pools } = usePoolFactory();
   const [selectedPool, setSelectedPool] = useState<any>(null);
   
-  const poolData = useRoscaPool(userData.address || undefined);
+  // Use pool-specific data from factory
+  const poolData = usePoolData(poolId, userData.address || undefined);
   const [isJoining, setIsJoining] = useState(false);
   const [isContributing, setIsContributing] = useState(false);
 
@@ -140,7 +141,7 @@ const CommunityPool: React.FC = () => {
             <Users className="text-green-600" size={20} />
           </div>
           <div className="text-2xl font-bold text-gray-900">
-            {selectedPool ? '0' : (poolData.loading ? '...' : poolData.totalMembers)}
+            {poolData.loading ? '...' : (poolData.isMember ? '1+' : '0')}
           </div>
         </div>
 
@@ -150,7 +151,7 @@ const CommunityPool: React.FC = () => {
             <Calendar className="text-blue-600" size={20} />
           </div>
           <div className="text-2xl font-bold text-gray-900">
-            #{selectedPool ? '0' : (poolData.loading ? '...' : poolData.currentRound)}
+            #0
           </div>
         </div>
 
@@ -160,7 +161,7 @@ const CommunityPool: React.FC = () => {
             <DollarSign className="text-purple-600" size={20} />
           </div>
           <div className="text-2xl font-bold text-gray-900">
-            {selectedPool ? '0.00 STX' : (poolData.loading ? '...' : `${(poolData.poolBalance / 1000000).toFixed(2)} STX`)}
+            {poolData.loading ? '...' : `${(poolData.poolBalance / 1000000).toFixed(2)} STX`}
           </div>
         </div>
 
