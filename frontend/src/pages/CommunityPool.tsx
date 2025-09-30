@@ -33,23 +33,29 @@ const CommunityPool: React.FC = () => {
       return;
     }
 
+    if (!selectedPool) {
+      toast.error('No pool selected');
+      return;
+    }
+
     setIsJoining(true);
     toast.loading('Opening wallet...', { id: 'join-pool' });
     
     try {
       const network = new StacksTestnet();
+      const { uintCV } = await import('@stacks/transactions');
       
-      // Call the join-pool function
+      // Call the pool-factory join-pool function with pool ID
       await openContractCall({
         contractAddress: 'STKV0VGBVWGZMGRCQR3SY6R11FED3FW4WRYMWF28',
-        contractName: 'rosca-pool',
+        contractName: 'pool-factory',
         functionName: 'join-pool',
-        functionArgs: [],
+        functionArgs: [uintCV(parseInt(selectedPool.id))],
         postConditionMode: PostConditionMode.Allow,
         network,
         onFinish: (data) => {
           console.log('Transaction:', data);
-          toast.success('Successfully joined the community pool! 🎉', { id: 'join-pool' });
+          toast.success(`Successfully joined ${selectedPool.name}! 🎉`, { id: 'join-pool' });
           setIsJoining(false);
         },
         onCancel: () => {
@@ -70,13 +76,8 @@ const CommunityPool: React.FC = () => {
       return;
     }
 
-    if (!poolData.isMember) {
-      toast.error('You must join the pool first before contributing!');
-      return;
-    }
-
-    if (poolData.hasContributedThisRound) {
-      toast.error('You have already contributed this round!');
+    if (!selectedPool) {
+      toast.error('No pool selected');
       return;
     }
 
@@ -179,9 +180,9 @@ const CommunityPool: React.FC = () => {
       {/* Main Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Join Pool */}
-        {!poolData.isMember && (
+        {selectedPool && (
           <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-8 border border-green-200">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Join the Community Pool</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Join {selectedPool.name}</h2>
             <p className="text-gray-700 mb-6">
               Become a member and start contributing to the community pool. There's no minimum requirement - 
               contribute what you can afford each week!
@@ -225,33 +226,32 @@ const CommunityPool: React.FC = () => {
             distributed proportionally at the end of the month.
           </p>
 
-          {!poolData.isMember && !poolData.loading && (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-              <p className="text-yellow-800 text-sm">
-                ⚠️ You must join the pool first before you can contribute!
-              </p>
-            </div>
+          {selectedPool && (
+            <>
+              <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <p className="text-sm text-blue-800 mb-2">
+                  <strong>Fixed Contribution:</strong> {(selectedPool.contributionAmount / 1000000).toFixed(2)} STX
+                </p>
+                <p className="text-xs text-blue-600">
+                  All members contribute the same amount each round for fairness.
+                </p>
+              </div>
+
+              <div className="mb-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <p className="text-yellow-800 text-sm">
+                  ℹ️ This pool is registered but not yet deployed. Join to activate it!
+                </p>
+              </div>
+
+              <button
+                onClick={handleContribute}
+                disabled={isContributing || !userData.isSignedIn}
+                className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isContributing ? 'Contributing...' : 'Contribute to Pool'}
+              </button>
+            </>
           )}
-
-          <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <p className="text-sm text-blue-800 mb-2">
-              <strong>Fixed Contribution:</strong> {selectedPool 
-                ? `${(selectedPool.contributionAmount / 1000000).toFixed(2)} STX`
-                : `${(poolData.contributionAmount / 1000000).toFixed(2)} STX`
-              }
-            </p>
-            <p className="text-xs text-blue-600">
-              All members contribute the same amount each round for fairness.
-            </p>
-          </div>
-
-          <button
-            onClick={handleContribute}
-            disabled={isContributing || !userData.isSignedIn || poolData.hasContributedThisRound}
-            className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isContributing ? 'Contributing...' : poolData.hasContributedThisRound ? 'Already Contributed This Round' : 'Contribute to Pool'}
-          </button>
 
           {!userData.isSignedIn && (
             <p className="text-sm text-orange-600 mt-4 text-center">
