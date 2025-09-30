@@ -58,6 +58,10 @@
   (default-to false (map-get? pool-members { pool-id: pool-id, member: member }))
 )
 
+(define-read-only (get-pool-balance (pool-id uint))
+  (default-to u0 (map-get? pool-balances pool-id))
+)
+
 ;; Public functions
 
 ;; Register a new pool
