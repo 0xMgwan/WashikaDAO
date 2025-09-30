@@ -24,6 +24,7 @@ const Governance = React.lazy(() => import('./pages/Governance'));
 const Savings = React.lazy(() => import('./pages/Savings'));
 const Analytics = React.lazy(() => import('./pages/Analytics'));
 const CommunityPool = React.lazy(() => import('./pages/CommunityPool'));
+const Profile = React.lazy(() => import('./pages/Profile'));
 
 function App() {
   return (
@@ -67,6 +68,7 @@ function App() {
               <Route path="/" element={<Landing />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/community-pool" element={<CommunityPool />} />
+              <Route path="/profile" element={<Profile />} />
               <Route path="/governance" element={<Governance />} />
               <Route path="/savings" element={<Savings />} />
               <Route path="/analytics" element={<Analytics />} />

@@ -1,19 +1,17 @@
 import React, { useState } from 'react';
-import { Users, Calendar, TrendingUp, DollarSign, ArrowRight, CheckCircle, Gift } from 'lucide-react';
+import { Users, Calendar, TrendingUp, DollarSign, ArrowRight, CheckCircle, Gift, Award } from 'lucide-react';
 import { useStacks } from '../hooks/useStacks';
-import { useCommunityPool } from '../hooks/useCommunityPool';
+import { useRoscaPool } from '../hooks/useRoscaPool';
 import { openContractCall } from '@stacks/connect';
-import { uintCV, PostConditionMode } from '@stacks/transactions';
+import { PostConditionMode } from '@stacks/transactions';
 import { StacksTestnet } from '@stacks/network';
 import toast from 'react-hot-toast';
 
 const CommunityPool: React.FC = () => {
   const { userData } = useStacks();
-  const poolData = useCommunityPool(userData.address || undefined);
-  const [contributionAmount, setContributionAmount] = useState('');
+  const poolData = useRoscaPool(userData.address || undefined);
   const [isJoining, setIsJoining] = useState(false);
   const [isContributing, setIsContributing] = useState(false);
-  const [isClaiming, setIsClaiming] = useState(false);
 
   const handleJoinPool = async () => {
     if (!userData.isSignedIn) {
@@ -30,7 +28,7 @@ const CommunityPool: React.FC = () => {
       // Call the join-pool function
       await openContractCall({
         contractAddress: 'STKV0VGBVWGZMGRCQR3SY6R11FED3FW4WRYMWF28',
-        contractName: 'community-pool',
+        contractName: 'rosca-pool',
         functionName: 'join-pool',
         functionArgs: [],
         postConditionMode: PostConditionMode.Allow,
@@ -63,8 +61,8 @@ const CommunityPool: React.FC = () => {
       return;
     }
 
-    if (!contributionAmount || parseFloat(contributionAmount) <= 0) {
-      toast.error('Please enter a valid amount');
+    if (poolData.hasContributedThisRound) {
+      toast.error('You have already contributed this round!');
       return;
     }
 
@@ -74,20 +72,17 @@ const CommunityPool: React.FC = () => {
     try {
       const network = new StacksTestnet();
       
-      // Convert STX to microSTX (1 STX = 1,000,000 microSTX)
-      const amountInMicroSTX = Math.floor(parseFloat(contributionAmount) * 1000000);
-      
+      // ROSCA uses fixed contribution amount
       await openContractCall({
         contractAddress: 'STKV0VGBVWGZMGRCQR3SY6R11FED3FW4WRYMWF28',
-        contractName: 'community-pool',
+        contractName: 'rosca-pool',
         functionName: 'contribute',
-        functionArgs: [uintCV(amountInMicroSTX)],
+        functionArgs: [],
         postConditionMode: PostConditionMode.Allow,
         network,
         onFinish: (data) => {
           console.log('Transaction:', data);
-          toast.success(`Successfully contributed ${contributionAmount} STX! 💰`, { id: 'contribute' });
-          setContributionAmount('');
+          toast.success(`Successfully contributed ${(poolData.contributionAmount / 1000000).toFixed(2)} STX! 💰`, { id: 'contribute' });
           setIsContributing(false);
         },
         onCancel: () => {
@@ -133,17 +128,17 @@ const CommunityPool: React.FC = () => {
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-gray-600 text-sm">Current Cycle</span>
+            <span className="text-gray-600 text-sm">Current Round</span>
             <Calendar className="text-blue-600" size={20} />
           </div>
           <div className="text-2xl font-bold text-gray-900">
-            #{poolData.loading ? '...' : poolData.currentCycle}
+            #{poolData.loading ? '...' : poolData.currentRound}
           </div>
         </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-gray-600 text-sm">Pool Balance</span>
+            <span className="text-gray-600 text-sm">Pot Balance</span>
             <DollarSign className="text-purple-600" size={20} />
           </div>
           <div className="text-2xl font-bold text-gray-900">
@@ -153,11 +148,11 @@ const CommunityPool: React.FC = () => {
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-gray-600 text-sm">Your Total</span>
+            <span className="text-gray-600 text-sm">Fixed Contribution</span>
             <TrendingUp className="text-orange-600" size={20} />
           </div>
           <div className="text-2xl font-bold text-gray-900">
-            {poolData.loading ? '...' : (poolData.yourTotalContributions / 1000000).toFixed(2)} STX
+            {poolData.loading ? '...' : (poolData.contributionAmount / 1000000).toFixed(2)} STX
           </div>
         </div>
       </div>
@@ -219,30 +214,21 @@ const CommunityPool: React.FC = () => {
             </div>
           )}
 
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Amount (STX)
-            </label>
-            <input
-              type="number"
-              value={contributionAmount}
-              onChange={(e) => setContributionAmount(e.target.value)}
-              placeholder="Enter amount in STX"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              min="0"
-              step="0.000001"
-            />
-            <p className="text-sm text-gray-500 mt-2">
-              Minimum: 0.000001 STX (1 microSTX)
+          <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <p className="text-sm text-blue-800 mb-2">
+              <strong>Fixed Contribution:</strong> {(poolData.contributionAmount / 1000000).toFixed(2)} STX
+            </p>
+            <p className="text-xs text-blue-600">
+              All members contribute the same amount each round for fairness.
             </p>
           </div>
 
           <button
             onClick={handleContribute}
-            disabled={isContributing || !userData.isSignedIn || !contributionAmount}
+            disabled={isContributing || !userData.isSignedIn || poolData.hasContributedThisRound}
             className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isContributing ? 'Contributing...' : 'Contribute to Pool'}
+            {isContributing ? 'Contributing...' : poolData.hasContributedThisRound ? 'Already Contributed This Round' : 'Contribute to Pool'}
           </button>
 
           {!userData.isSignedIn && (

@@ -1,19 +1,20 @@
 import { useState, useEffect } from 'react';
-import { callReadOnlyFunction, cvToJSON } from '@stacks/transactions';
+import { callReadOnlyFunction, cvToJSON, principalCV } from '@stacks/transactions';
 import { StacksTestnet } from '@stacks/network';
 
 const CONTRACT_ADDRESS = 'STKV0VGBVWGZMGRCQR3SY6R11FED3FW4WRYMWF28';
-const CONTRACT_NAME = 'community-pool-v2';
+const CONTRACT_NAME = 'rosca-pool';
 
-export const useCommunityPool = (userAddress?: string) => {
+export const useRoscaPool = (userAddress?: string) => {
   const [poolData, setPoolData] = useState({
     totalMembers: 0,
-    currentCycle: 0,
+    currentRound: 0,
+    contributionAmount: 0,
     poolBalance: 0,
-    cycleStartHeight: 0,
     isMember: false,
-    yourContribution: 0,
-    yourTotalContributions: 0,
+    hasContributedThisRound: false,
+    hasReceivedPayout: false,
+    currentRecipient: null as string | null,
     canDistribute: false,
     loading: true,
   });
@@ -33,11 +34,21 @@ export const useCommunityPool = (userAddress?: string) => {
           senderAddress: CONTRACT_ADDRESS,
         });
 
-        // Fetch current cycle
-        const currentCycleResult = await callReadOnlyFunction({
+        // Fetch current round
+        const currentRoundResult = await callReadOnlyFunction({
           contractAddress: CONTRACT_ADDRESS,
           contractName: CONTRACT_NAME,
-          functionName: 'get-current-cycle',
+          functionName: 'get-current-round',
+          functionArgs: [],
+          network,
+          senderAddress: CONTRACT_ADDRESS,
+        });
+
+        // Fetch contribution amount
+        const contributionAmountResult = await callReadOnlyFunction({
+          contractAddress: CONTRACT_ADDRESS,
+          contractName: CONTRACT_NAME,
+          functionName: 'get-contribution-amount',
           functionArgs: [],
           network,
           senderAddress: CONTRACT_ADDRESS,
@@ -63,20 +74,33 @@ export const useCommunityPool = (userAddress?: string) => {
           senderAddress: CONTRACT_ADDRESS,
         });
 
+        // Fetch current recipient
+        const currentRecipientResult = await callReadOnlyFunction({
+          contractAddress: CONTRACT_ADDRESS,
+          contractName: CONTRACT_NAME,
+          functionName: 'get-current-recipient',
+          functionArgs: [],
+          network,
+          senderAddress: CONTRACT_ADDRESS,
+        });
+
         // Parse results
         const totalMembers = Number(cvToJSON(totalMembersResult).value);
-        const currentCycle = Number(cvToJSON(currentCycleResult).value);
+        const currentRound = Number(cvToJSON(currentRoundResult).value);
+        const contributionAmount = Number(cvToJSON(contributionAmountResult).value);
         const poolBalance = Number(cvToJSON(poolBalanceResult).value);
         const canDistribute = cvToJSON(canDistributeResult).value === true;
+        
+        const recipientData = cvToJSON(currentRecipientResult);
+        const currentRecipient = recipientData.value ? recipientData.value.value : null;
 
         let isMember = false;
-        let yourTotalContributions = 0;
+        let hasContributedThisRound = false;
+        let hasReceivedPayout = false;
 
         // Check if user is a member
         if (userAddress) {
           try {
-            const { principalCV } = await import('@stacks/transactions');
-            
             const isMemberResult = await callReadOnlyFunction({
               contractAddress: CONTRACT_ADDRESS,
               contractName: CONTRACT_NAME,
@@ -87,16 +111,27 @@ export const useCommunityPool = (userAddress?: string) => {
             });
             isMember = cvToJSON(isMemberResult).value === true;
 
-            // Get user's total contributions
-            const totalContribResult = await callReadOnlyFunction({
+            // Check if contributed this round
+            const hasContributedResult = await callReadOnlyFunction({
               contractAddress: CONTRACT_ADDRESS,
               contractName: CONTRACT_NAME,
-              functionName: 'get-member-total',
+              functionName: 'has-contributed-this-round',
               functionArgs: [principalCV(userAddress)],
               network,
               senderAddress: userAddress,
             });
-            yourTotalContributions = Number(cvToJSON(totalContribResult).value);
+            hasContributedThisRound = cvToJSON(hasContributedResult).value === true;
+
+            // Check if received payout
+            const hasReceivedResult = await callReadOnlyFunction({
+              contractAddress: CONTRACT_ADDRESS,
+              contractName: CONTRACT_NAME,
+              functionName: 'has-received-payout',
+              functionArgs: [principalCV(userAddress)],
+              network,
+              senderAddress: userAddress,
+            });
+            hasReceivedPayout = cvToJSON(hasReceivedResult).value === true;
           } catch (error) {
             console.error('Error fetching user data:', error);
           }
@@ -104,17 +139,18 @@ export const useCommunityPool = (userAddress?: string) => {
 
         setPoolData({
           totalMembers,
-          currentCycle,
+          currentRound,
+          contributionAmount,
           poolBalance,
-          cycleStartHeight: 0,
           isMember,
-          yourContribution: 0,
-          yourTotalContributions,
+          hasContributedThisRound,
+          hasReceivedPayout,
+          currentRecipient,
           canDistribute,
           loading: false,
         });
       } catch (error) {
-        console.error('Error fetching pool data:', error);
+        console.error('Error fetching ROSCA pool data:', error);
         setPoolData(prev => ({ ...prev, loading: false }));
       }
     };
@@ -129,4 +165,4 @@ export const useCommunityPool = (userAddress?: string) => {
   return poolData;
 };
 
-export default useCommunityPool;
+export default useRoscaPool;

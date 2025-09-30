@@ -127,16 +127,16 @@
     ;; Must be a member
     (asserts! (is-member caller) err-not-member)
     
-    ;; Check if already contributed this week
-    (asserts! (is-none existing-contrib) err-already-contributed)
-    
     ;; Transfer STX to contract
     (try! (stx-transfer? amount caller (as-contract tx-sender)))
     
-    ;; Record contribution
+    ;; Update or create contribution record
     (map-set member-contributions 
       { member: caller, cycle: cycle }
-      { amount: amount, week: week }
+      { 
+        amount: (+ amount (default-to u0 (get amount (default-to { amount: u0, week: week } existing-contrib)))),
+        week: week 
+      }
     )
     
     ;; Update totals

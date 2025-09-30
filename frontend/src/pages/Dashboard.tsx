@@ -79,10 +79,17 @@ const StatCard: React.FC<StatCardProps> = ({
 
 const Dashboard: React.FC = () => {
   const { userData } = useStacks();
+  
+  // Use real pool data - mock the others for now
   const { proposalCount } = useDAO();
   const { poolInfo } = useSavingsSTX();
   const { totalSupply } = useLendingCore();
   const { price: stxPrice } = useOracle('STX-USD');
+  
+  // Set defaults to prevent infinite loading
+  const safeProposalCount = proposalCount || 0;
+  const safePoolInfo = poolInfo || null;
+  const safeTotalSupply = totalSupply || null;
 
   // Calculate TVL (Total Value Locked)
   const calculateTVL = () => {
@@ -193,20 +200,20 @@ const Dashboard: React.FC = () => {
         
         <StatCard
           title="Active Proposals"
-          value={proposalCount ? extractClarityValue(proposalCount) : '3'}
-          change="+2"
+          value={proposalCount || '0'}
+          change="+2 this week"
           changeType="positive"
           icon={<Vote size={24} />}
-          loading={!proposalCount}
+          loading={false}
         />
         
         <StatCard
-          title="Savings Pool"
-          value={poolInfo ? `${formatSTX(parseInt(extractClarityValue(poolInfo)))} STX` : '125,000 STX'}
-          change="+8.3%"
+          title="Community Pool"
+          value={poolInfo ? `${formatSTX(parseInt(extractClarityValue(poolInfo)))} STX` : '0 STX'}
+          change="Live on Testnet"
           changeType="positive"
           icon={<PiggyBank size={24} />}
-          loading={!poolInfo}
+          loading={false}
         />
 
         <StatCard
