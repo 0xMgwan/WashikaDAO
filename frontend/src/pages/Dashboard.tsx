@@ -2,8 +2,7 @@ import React from 'react';
 import { 
   TrendingUp, 
   Users, 
-  DollarSign, 
-  Activity,
+  DollarSign,
   PiggyBank,
   Vote,
   Heart,
@@ -82,7 +81,7 @@ const Dashboard: React.FC = () => {
   const { userData } = useStacks();
   const { proposalCount } = useDAO();
   const { poolInfo } = useSavingsSTX();
-  const { totalSupply, totalBorrows } = useLendingCore();
+  const { totalSupply } = useLendingCore();
   const { price: stxPrice } = useOracle('STX-USD');
 
   // Calculate TVL (Total Value Locked)

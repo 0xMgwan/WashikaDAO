@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { Users, Calendar, TrendingUp, DollarSign, ArrowRight, CheckCircle } from 'lucide-react';
 import { useStacks } from '../hooks/useStacks';
+import { openContractCall } from '@stacks/connect';
+import { uintCV, PostConditionMode } from '@stacks/transactions';
 
 const CommunityPool: React.FC = () => {
-  const { userData, contractCall } = useStacks();
+  const { userData } = useStacks();
   const [contributionAmount, setContributionAmount] = useState('');
   const [isJoining, setIsJoining] = useState(false);
   const [isContributing, setIsContributing] = useState(false);
@@ -26,17 +28,25 @@ const CommunityPool: React.FC = () => {
     setIsJoining(true);
     try {
       // Call the join-pool function
-      await contractCall({
-        contractAddress: import.meta.env.VITE_CONTRACT_ADDRESS,
+      await openContractCall({
+        contractAddress: 'STKV0VGBVWGZMGRCQR3SY6R11FED3FW4WRYMWF28',
         contractName: 'community-pool',
         functionName: 'join-pool',
         functionArgs: [],
+        postConditionMode: PostConditionMode.Allow,
+        network: 'testnet',
+        onFinish: (data) => {
+          console.log('Transaction:', data);
+          alert('Successfully joined the community pool!');
+          setIsJoining(false);
+        },
+        onCancel: () => {
+          setIsJoining(false);
+        },
       });
-      alert('Successfully joined the community pool!');
     } catch (error) {
       console.error('Error joining pool:', error);
       alert('Failed to join pool. See console for details.');
-    } finally {
       setIsJoining(false);
     }
   };
@@ -57,19 +67,26 @@ const CommunityPool: React.FC = () => {
       // Convert STX to microSTX (1 STX = 1,000,000 microSTX)
       const amountInMicroSTX = Math.floor(parseFloat(contributionAmount) * 1000000);
       
-      await contractCall({
-        contractAddress: import.meta.env.VITE_CONTRACT_ADDRESS,
+      await openContractCall({
+        contractAddress: 'STKV0VGBVWGZMGRCQR3SY6R11FED3FW4WRYMWF28',
         contractName: 'community-pool',
         functionName: 'contribute',
-        functionArgs: [amountInMicroSTX],
+        functionArgs: [uintCV(amountInMicroSTX)],
+        postConditionMode: PostConditionMode.Allow,
+        network: 'testnet',
+        onFinish: (data) => {
+          console.log('Transaction:', data);
+          alert(`Successfully contributed ${contributionAmount} STX!`);
+          setContributionAmount('');
+          setIsContributing(false);
+        },
+        onCancel: () => {
+          setIsContributing(false);
+        },
       });
-      
-      alert(`Successfully contributed ${contributionAmount} STX!`);
-      setContributionAmount('');
     } catch (error) {
       console.error('Error contributing:', error);
       alert('Failed to contribute. See console for details.');
-    } finally {
       setIsContributing(false);
     }
   };
