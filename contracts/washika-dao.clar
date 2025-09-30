@@ -74,9 +74,9 @@
     proposer: proposer,
     targets: targets,
     description: description,
-    start-block: (+ block-height (var-get voting-delay)),
-    end-block: (+ block-height (var-get voting-delay) (var-get voting-period)),
-    block-height: block-height
+    start-block: (+ burn-block-height (var-get voting-delay)),
+    end-block: (+ burn-block-height (var-get voting-delay) (var-get voting-period)),
+    burn-block-height: burn-block-height
   })
 )
 
@@ -87,7 +87,7 @@
     proposal-id: proposal-id,
     support: support,
     votes: votes,
-    block-height: block-height
+    burn-block-height: burn-block-height
   })
 )
 
@@ -96,7 +96,7 @@
     event: "proposal-queued",
     proposal-id: proposal-id,
     eta: eta,
-    block-height: block-height
+    burn-block-height: burn-block-height
   })
 )
 
@@ -104,7 +104,7 @@
   (print {
     event: "proposal-executed",
     proposal-id: proposal-id,
-    block-height: block-height
+    burn-block-height: burn-block-height
   })
 )
 
@@ -231,9 +231,9 @@
   (description (string-utf8 1024))
 )
   (let (
-    (proposer-votes (unwrap-panic (contract-call? .governance-token get-prior-votes tx-sender (- block-height u1))))
+    (proposer-votes (unwrap-panic (contract-call? .governance-token get-prior-votes tx-sender (- burn-block-height u1))))
     (proposal-id (+ (var-get proposal-count) u1))
-    (start-block (+ block-height (var-get voting-delay)))
+    (start-block (+ burn-block-height (var-get voting-delay)))
     (end-block (+ start-block (var-get voting-period)))
   )
     (asserts! (not (var-get paused)) ERR_UNAUTHORIZED)
@@ -310,7 +310,7 @@
   (let (
     (proposal (unwrap! (map-get? proposals proposal-id) ERR_PROPOSAL_NOT_FOUND))
     (timelock (unwrap! (var-get timelock-address) ERR_UNAUTHORIZED))
-    (eta (+ block-height u144)) ;; ~24 hours delay
+    (eta (+ burn-block-height u144)) ;; ~24 hours delay
   )
     (asserts! (not (var-get paused)) ERR_UNAUTHORIZED)
     (asserts! (is-eq (get-proposal-state proposal-id) PROPOSAL_STATE_SUCCEEDED) ERR_PROPOSAL_NOT_SUCCEEDED)
@@ -331,7 +331,7 @@
   )
     (asserts! (not (var-get paused)) ERR_UNAUTHORIZED)
     (asserts! (is-eq (get-proposal-state proposal-id) PROPOSAL_STATE_QUEUED) ERR_PROPOSAL_NOT_SUCCEEDED)
-    (asserts! (>= block-height (get eta proposal)) ERR_TIMELOCK_NOT_READY)
+    (asserts! (>= burn-block-height (get eta proposal)) ERR_TIMELOCK_NOT_READY)
     (asserts! (not (get executed proposal)) ERR_PROPOSAL_ALREADY_EXECUTED)
     
     ;; Mark as executed
@@ -370,9 +370,9 @@
       PROPOSAL_STATE_CANCELED
       (if (get executed proposal)
         PROPOSAL_STATE_EXECUTED
-        (if (< block-height (get start-block proposal))
+        (if (< burn-block-height (get start-block proposal))
           PROPOSAL_STATE_PENDING
-          (if (<= block-height (get end-block proposal))
+          (if (<= burn-block-height (get end-block proposal))
             PROPOSAL_STATE_ACTIVE
             (if (< (get for-votes proposal) (var-get quorum-votes))
               PROPOSAL_STATE_DEFEATED
@@ -380,7 +380,7 @@
                 PROPOSAL_STATE_DEFEATED
                 (if (is-eq (get eta proposal) u0)
                   PROPOSAL_STATE_SUCCEEDED
-                  (if (< (+ (get eta proposal) u17280) block-height) ;; 3 day expiry
+                  (if (< (+ (get eta proposal) u17280) burn-block-height) ;; 3 day expiry
                     PROPOSAL_STATE_EXPIRED
                     PROPOSAL_STATE_QUEUED
                   )

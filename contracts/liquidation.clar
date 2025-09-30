@@ -50,7 +50,7 @@
     seize-token: seize-token,
     repay-amount: repay-amount,
     seize-amount: seize-amount,
-    block-height: block-height
+    burn-block-height: burn-block-height
   })
 )
 
@@ -163,7 +163,7 @@
           (try! (execute-liquidation borrower actual-repay-amount repay-token seize-token seize-amount))
           
           ;; Record liquidation
-          (map-set liquidation-history {liquidator: tx-sender, borrower: borrower, block: block-height} {
+          (map-set liquidation-history {liquidator: tx-sender, borrower: borrower, block: burn-block-height} {
             repay-token: repay-token,
             seize-token: seize-token,
             repay-amount: actual-repay-amount,
@@ -293,7 +293,7 @@
         borrower: borrower,
         repay-amount: borrow-balance,
         seize-amount: seize-amount,
-        block-height: block-height
+        burn-block-height: burn-block-height
       })
       
       (ok {repay-amount: borrow-balance, seize-amount: seize-amount})

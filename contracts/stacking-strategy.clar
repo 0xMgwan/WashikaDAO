@@ -57,7 +57,7 @@
     amount: amount,
     pox-address: pox-address,
     lock-period: lock-period,
-    block-height: block-height
+    burn-block-height: burn-block-height
   })
 )
 
@@ -66,7 +66,7 @@
     event: "stacking-extended",
     cycle: cycle,
     extend-count: extend-count,
-    block-height: block-height
+    burn-block-height: burn-block-height
   })
 )
 
@@ -75,7 +75,7 @@
     event: "rewards-processed",
     cycle: cycle,
     btc-amount: btc-amount,
-    block-height: block-height
+    burn-block-height: burn-block-height
   })
 )
 
@@ -168,7 +168,7 @@
   ;; For now, we'll simulate the response
   {
     current-cycle: (var-get current-cycle),
-    next-cycle-start: (+ block-height u2100), ;; ~2 weeks
+    next-cycle-start: (+ burn-block-height u2100), ;; ~2 weeks
     min-threshold: u125000000000, ;; 125,000 STX
     prepare-phase-length: u100,
     reward-phase-length: u2000
@@ -338,7 +338,7 @@
       delegate-to: delegate-to,
       until-burn-ht: until-burn-ht,
       pox-addr: pox-addr,
-      block-height: block-height
+      burn-block-height: burn-block-height
     })
     
     (ok true)
@@ -364,7 +364,7 @@
     
     (print {
       event: "emergency-revoke-stacking",
-      block-height: block-height
+      burn-block-height: burn-block-height
     })
     
     (ok true)
@@ -411,7 +411,7 @@
       event: "stx-received-for-stacking",
       amount: stx-transfer-amount,
       sender: tx-sender,
-      block-height: block-height
+      burn-block-height: burn-block-height
     })
     (ok stx-transfer-amount)
   )

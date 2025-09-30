@@ -57,7 +57,7 @@
     shares-minted: shares-minted,
     total-stx: (var-get total-stx),
     total-shares: (var-get total-shares),
-    block-height: block-height
+    burn-block-height: burn-block-height
   })
 )
 
@@ -69,7 +69,7 @@
     stx-amount: stx-amount,
     total-stx: (var-get total-stx),
     total-shares: (var-get total-shares),
-    block-height: block-height
+    burn-block-height: burn-block-height
   })
 )
 
@@ -77,7 +77,7 @@
   (print {
     event: "stacking-status-changed",
     enabled: enabled,
-    block-height: block-height
+    burn-block-height: burn-block-height
   })
 )
 
@@ -87,7 +87,7 @@
     cycle: cycle,
     btc-amount: btc-amount,
     reward-index: (var-get reward-index-btc),
-    block-height: block-height
+    burn-block-height: burn-block-height
   })
 )
 
@@ -297,7 +297,7 @@
       pox-address: pox-address,
       start-cycle: start-cycle,
       lock-period: lock-period,
-      block-height: block-height
+      burn-block-height: burn-block-height
     })
     
     (ok true)
@@ -317,7 +317,7 @@
                          u0))
     )
       (var-set reward-index-btc (+ (var-get reward-index-btc) reward-per-share))
-      (var-set last-reward-block block-height)
+      (var-set last-reward-block burn-block-height)
       
       ;; Record cycle info
       (map-set cycle-info cycle {
@@ -351,7 +351,7 @@
         event: "btc-rewards-claimed",
         user: tx-sender,
         amount: accrued-btc,
-        block-height: block-height
+        burn-block-height: burn-block-height
       })
       
       (ok accrued-btc)

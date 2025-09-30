@@ -71,8 +71,8 @@
     pair: pair,
     price: price,
     round: round,
-    updated-at: block-height,
-    block-height: block-height
+    updated-at: burn-block-height,
+    burn-block-height: burn-block-height
   })
 )
 
@@ -81,7 +81,7 @@
     event: "signer-added",
     signer: signer,
     pubkey: pubkey,
-    block-height: block-height
+    burn-block-height: burn-block-height
   })
 )
 
@@ -89,7 +89,7 @@
   (print {
     event: "signer-removed",
     signer: signer,
-    block-height: block-height
+    burn-block-height: burn-block-height
   })
 )
 
@@ -215,7 +215,7 @@
         (map-set rounds {pair: pair, round: round} {
           submissions: u0,
           finalized: false,
-          deadline: (+ block-height u10), ;; 10 blocks to submit
+          deadline: (+ burn-block-height u10), ;; 10 blocks to submit
           median-price: u0
         })
         true
@@ -224,7 +224,7 @@
       ;; Submit price
       (map-set round-submissions {pair: pair, round: round, signer: tx-sender} {
         price: price,
-        timestamp: block-height,
+        timestamp: burn-block-height,
         signature: signature
       })
       
@@ -280,7 +280,7 @@
       ;; Update price
       (map-set prices pair {
         price: median-price,
-        updated-at: block-height,
+        updated-at: burn-block-height,
         round: round
       })
       
@@ -351,7 +351,7 @@
 (define-read-only (is-price-stale (pair (string-ascii 16)) (max-age uint))
   (let ((price-data (map-get? prices pair)))
     (match price-data
-      data (ok (> (- block-height (get updated-at data)) max-age))
+      data (ok (> (- burn-block-height (get updated-at data)) max-age))
       (ok true) ;; No price data = stale
     )
   )
@@ -360,7 +360,7 @@
 (define-read-only (get-price-safe (pair (string-ascii 16)) (max-age uint))
   (let ((price-data (map-get? prices pair)))
     (match price-data
-      data (if (<= (- block-height (get updated-at data)) max-age)
+      data (if (<= (- burn-block-height (get updated-at data)) max-age)
              (ok (get price data))
              (err ERR_STALE_PRICE))
       (err ERR_STALE_PRICE)
@@ -405,7 +405,7 @@
     
     (map-set prices pair {
       price: price,
-      updated-at: block-height,
+      updated-at: burn-block-height,
       round: u999999 ;; Emergency round
     })
     
@@ -413,7 +413,7 @@
       event: "emergency-price-update",
       pair: pair,
       price: price,
-      block-height: block-height
+      burn-block-height: burn-block-height
     })
     
     (ok true)

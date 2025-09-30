@@ -46,7 +46,7 @@
     shares-minted: shares-minted,
     total-sbtc: (var-get total-sbtc),
     total-shares: (var-get total-shares),
-    block-height: block-height
+    burn-block-height: burn-block-height
   })
 )
 
@@ -58,7 +58,7 @@
     sbtc-amount: sbtc-amount,
     total-sbtc: (var-get total-sbtc),
     total-shares: (var-get total-shares),
-    block-height: block-height
+    burn-block-height: burn-block-height
   })
 )
 
@@ -68,7 +68,7 @@
     token: token,
     amount: amount,
     reward-index: (var-get reward-index-washa),
-    block-height: block-height
+    burn-block-height: burn-block-height
   })
 )
 
@@ -259,7 +259,7 @@
                          u0))
     )
       (var-set reward-index-washa (+ (var-get reward-index-washa) reward-per-share))
-      (var-set last-reward-block block-height)
+      (var-set last-reward-block burn-block-height)
       
       ;; Mark token as reward token
       (map-set reward-tokens (contract-of reward-token) true)
@@ -292,7 +292,7 @@
         user: tx-sender,
         token: (contract-of reward-token),
         amount: accrued-rewards,
-        block-height: block-height
+        burn-block-height: burn-block-height
       })
       
       (ok accrued-rewards)
@@ -311,7 +311,7 @@
         token: (contract-of token),
         recipient: recipient,
         amount: balance,
-        block-height: block-height
+        burn-block-height: burn-block-height
       })
       (ok balance)
     )

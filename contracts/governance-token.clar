@@ -27,7 +27,7 @@
 
 ;; Delegation storage
 (define-map delegates principal principal)
-(define-map checkpoints {owner: principal, index: uint} {block-height: uint, votes: uint})
+(define-map checkpoints {owner: principal, index: uint} {burn-block-height: uint, votes: uint})
 (define-map num-checkpoints principal uint)
 
 ;; Events
@@ -37,7 +37,7 @@
     sender: sender,
     recipient: recipient,
     amount: amount,
-    block-height: block-height
+    burn-block-height: burn-block-height
   })
 )
 
@@ -47,7 +47,7 @@
     delegator: delegator,
     from-delegate: from-delegate,
     to-delegate: to-delegate,
-    block-height: block-height
+    burn-block-height: burn-block-height
   })
 )
 
@@ -57,7 +57,7 @@
     delegate: delegate,
     previous-balance: previous-balance,
     new-balance: new-balance,
-    block-height: block-height
+    burn-block-height: burn-block-height
   })
 )
 
@@ -217,19 +217,19 @@
   )
 )
 
-(define-read-only (get-prior-votes (account principal) (block-height uint))
+(define-read-only (get-prior-votes (account principal) (burn-block-height uint))
   (let ((num-checkpoints-account (default-to u0 (map-get? num-checkpoints account))))
     (if (is-eq num-checkpoints-account u0)
       u0
       (let ((checkpoint-0 (unwrap-panic (map-get? checkpoints {owner: account, index: u0}))))
-        (if (> (get block-height checkpoint-0) block-height)
+        (if (> (get burn-block-height checkpoint-0) burn-block-height)
           u0
           (let ((checkpoint-last (unwrap-panic (map-get? checkpoints {owner: account, index: (- num-checkpoints-account u1)}))))
-            (if (<= (get block-height checkpoint-last) block-height)
+            (if (<= (get burn-block-height checkpoint-last) burn-block-height)
               (get votes checkpoint-last)
               ;; Binary search would go here for efficiency
               ;; For now, linear search from the end
-              (get-votes-at-block account block-height (- num-checkpoints-account u1))
+              (get-votes-at-block account burn-block-height (- num-checkpoints-account u1))
             )
           )
         )
@@ -241,7 +241,7 @@
 ;; Helper for binary search (simplified linear search for now)
 (define-private (get-votes-at-block (account principal) (target-block uint) (high uint))
   (let ((checkpoint (unwrap-panic (map-get? checkpoints {owner: account, index: high}))))
-    (if (<= (get block-height checkpoint) target-block)
+    (if (<= (get burn-block-height checkpoint) target-block)
       (get votes checkpoint)
       (if (is-eq high u0)
         u0
@@ -287,15 +287,15 @@
 (define-private (write-checkpoint (delegate principal) (new-votes uint))
   (let (
     (num-checkpoints-delegate (default-to u0 (map-get? num-checkpoints delegate)))
-    (current-block block-height)
+    (current-block burn-block-height)
   )
     (if (and (> num-checkpoints-delegate u0)
-             (is-eq (get block-height (unwrap-panic (map-get? checkpoints {owner: delegate, index: (- num-checkpoints-delegate u1)}))) current-block))
+             (is-eq (get burn-block-height (unwrap-panic (map-get? checkpoints {owner: delegate, index: (- num-checkpoints-delegate u1)}))) current-block))
       ;; Update existing checkpoint for this block
-      (map-set checkpoints {owner: delegate, index: (- num-checkpoints-delegate u1)} {block-height: current-block, votes: new-votes})
+      (map-set checkpoints {owner: delegate, index: (- num-checkpoints-delegate u1)} {burn-block-height: current-block, votes: new-votes})
       ;; Create new checkpoint
       (begin
-        (map-set checkpoints {owner: delegate, index: num-checkpoints-delegate} {block-height: current-block, votes: new-votes})
+        (map-set checkpoints {owner: delegate, index: num-checkpoints-delegate} {burn-block-height: current-block, votes: new-votes})
         (map-set num-checkpoints delegate (+ num-checkpoints-delegate u1))
       )
     )

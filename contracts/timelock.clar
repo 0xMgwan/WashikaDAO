@@ -44,7 +44,7 @@
     signature: signature,
     data: data,
     eta: eta,
-    block-height: block-height
+    burn-block-height: burn-block-height
   })
 )
 
@@ -56,7 +56,7 @@
     value: value,
     signature: signature,
     data: data,
-    block-height: block-height
+    burn-block-height: burn-block-height
   })
 )
 
@@ -64,7 +64,7 @@
   (print {
     event: "transaction-canceled",
     tx-hash: tx-hash,
-    block-height: block-height
+    burn-block-height: burn-block-height
   })
 )
 
@@ -164,7 +164,7 @@
 (define-public (queue-transaction (target principal) (value uint) (signature (string-ascii 256)) (data (buff 2048)) (eta uint))
   (let (
     (tx-hash (get-tx-hash target value signature data eta))
-    (current-block block-height)
+    (current-block burn-block-height)
   )
     (asserts! (not (var-get paused)) ERR_UNAUTHORIZED)
     (asserts! (is-admin) ERR_UNAUTHORIZED)
@@ -191,7 +191,7 @@
   (let (
     (tx-hash (get-tx-hash target value signature data eta))
     (transaction (unwrap! (map-get? queued-transactions tx-hash) ERR_TRANSACTION_NOT_FOUND))
-    (current-block block-height)
+    (current-block burn-block-height)
     (grace-period u2880) ;; ~20 days
   )
     (asserts! (not (var-get paused)) ERR_UNAUTHORIZED)

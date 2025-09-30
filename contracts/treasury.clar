@@ -26,7 +26,7 @@
     event: "stx-transfer",
     recipient: recipient,
     amount: amount,
-    block-height: block-height
+    burn-block-height: burn-block-height
   })
 )
 
@@ -36,7 +36,7 @@
     token: token,
     recipient: recipient,
     amount: amount,
-    block-height: block-height
+    burn-block-height: burn-block-height
   })
 )
 
@@ -45,7 +45,7 @@
     event: "spender-authorized",
     spender: spender,
     authorized: authorized,
-    block-height: block-height
+    burn-block-height: burn-block-height
   })
 )
 
@@ -246,7 +246,7 @@
       event: "stx-deposit",
       depositor: tx-sender,
       amount: stx-transfer-amount,
-      block-height: block-height
+      burn-block-height: burn-block-height
     })
     (ok stx-transfer-amount)
   )
@@ -262,7 +262,7 @@
       depositor: tx-sender,
       token: (contract-of token),
       amount: amount,
-      block-height: block-height
+      burn-block-height: burn-block-height
     })
     (ok amount)
   )

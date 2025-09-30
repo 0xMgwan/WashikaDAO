@@ -90,7 +90,7 @@
     user: user,
     asset: asset,
     amount: amount,
-    block-height: block-height
+    burn-block-height: burn-block-height
   })
 )
 
@@ -100,7 +100,7 @@
     user: user,
     asset: asset,
     amount: amount,
-    block-height: block-height
+    burn-block-height: burn-block-height
   })
 )
 
@@ -110,7 +110,7 @@
     user: user,
     asset: asset,
     amount: amount,
-    block-height: block-height
+    burn-block-height: burn-block-height
   })
 )
 
@@ -120,7 +120,7 @@
     user: user,
     asset: asset,
     amount: amount,
-    block-height: block-height
+    burn-block-height: burn-block-height
   })
 )
 
@@ -235,7 +235,7 @@
       total-reserves: u0,
       supply-index: SCALE_FACTOR,
       borrow-index: SCALE_FACTOR,
-      accrual-block: block-height,
+      accrual-block: burn-block-height,
       supply-rate: u0,
       borrow-rate: u0
     })
@@ -249,7 +249,7 @@
   (let (
     (market (unwrap! (map-get? markets asset) ERR_MARKET_NOT_FOUND))
     (state (unwrap! (map-get? market-state asset) ERR_MARKET_NOT_FOUND))
-    (blocks-elapsed (- block-height (get accrual-block state)))
+    (blocks-elapsed (- burn-block-height (get accrual-block state)))
   )
     (if (is-eq blocks-elapsed u0)
       (ok true)
@@ -281,7 +281,7 @@
             total-reserves: new-total-reserves,
             supply-index: new-supply-index,
             borrow-index: new-borrow-index,
-            accrual-block: block-height,
+            accrual-block: burn-block-height,
             supply-rate: (get supply-rate new-rates),
             borrow-rate: (get borrow-rate new-rates)
           })
