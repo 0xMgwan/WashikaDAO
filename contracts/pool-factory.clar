@@ -34,6 +34,13 @@
   bool
 )
 
+(define-map pool-contributions
+  { pool-id: uint, member: principal, round: uint }
+  uint
+)
+
+(define-map pool-balances uint uint)
+
 ;; Read-only functions
 (define-read-only (get-pool-count)
   (var-get pool-count)
@@ -115,6 +122,42 @@
       event: "member-joined",
       pool-id: pool-id,
       member: member
+    })
+    
+    (ok true))
+)
+
+;; Contribute to a specific pool
+(define-public (contribute-to-pool (pool-id uint))
+  (let (
+    (member tx-sender)
+    (pool-data (unwrap! (map-get? pools pool-id) (err u404)))
+    (contribution-amt (get contribution-amount pool-data))
+    (current-round u0)
+  )
+    ;; Must be a member
+    (asserts! (is-pool-member pool-id member) (err u405))
+    
+    ;; Transfer STX to contract
+    (try! (stx-transfer? contribution-amt member (as-contract tx-sender)))
+    
+    ;; Record contribution
+    (map-set pool-contributions 
+      { pool-id: pool-id, member: member, round: current-round }
+      contribution-amt
+    )
+    
+    ;; Update pool balance
+    (map-set pool-balances 
+      pool-id 
+      (+ (default-to u0 (map-get? pool-balances pool-id)) contribution-amt)
+    )
+    
+    (print {
+      event: "contribution",
+      pool-id: pool-id,
+      member: member,
+      amount: contribution-amt
     })
     
     (ok true))
