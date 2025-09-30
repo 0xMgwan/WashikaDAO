@@ -20,6 +20,7 @@ const queryClient = new QueryClient({
 
 // Lazy load pages for better performance
 const Landing = React.lazy(() => import('./pages/Landing'));
+const PoolSelection = React.lazy(() => import('./pages/PoolSelection'));
 const Governance = React.lazy(() => import('./pages/Governance'));
 const Savings = React.lazy(() => import('./pages/Savings'));
 const Analytics = React.lazy(() => import('./pages/Analytics'));
@@ -67,6 +68,7 @@ function App() {
             <Routes>
               <Route path="/" element={<Landing />} />
               <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/pools" element={<PoolSelection />} />
               <Route path="/community-pool" element={<CommunityPool />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/governance" element={<Governance />} />

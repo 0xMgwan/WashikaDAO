@@ -8,9 +8,9 @@ const Landing: React.FC = () => {
   const { userData } = useStacks();
 
   React.useEffect(() => {
-    // If already connected, redirect to dashboard
+    // If already connected, redirect to pools
     if (userData.isSignedIn) {
-      navigate('/dashboard');
+      navigate('/pools');
     }
   }, [userData.isSignedIn, navigate]);
 
