@@ -234,7 +234,7 @@ const CreatePoolModal: React.FC<CreatePoolModalProps> = ({ onClose, onSuccess })
       // Register in factory
       await openContractCall({
         contractAddress: 'STKV0VGBVWGZMGRCQR3SY6R11FED3FW4WRYMWF28',
-        contractName: 'pool-factory-v2',
+        contractName: 'pool-factory-v3',
         functionName: 'register-pool',
         functionArgs: [
           stringUtf8CV(formData.name),

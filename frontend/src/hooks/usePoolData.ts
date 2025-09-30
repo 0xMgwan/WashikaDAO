@@ -3,7 +3,7 @@ import { callReadOnlyFunction, cvToJSON, principalCV, uintCV } from '@stacks/tra
 import { StacksTestnet } from '@stacks/network';
 
 const CONTRACT_ADDRESS = 'STKV0VGBVWGZMGRCQR3SY6R11FED3FW4WRYMWF28';
-const CONTRACT_NAME = 'pool-factory-v2';
+const CONTRACT_NAME = 'pool-factory-v3';
 
 export const usePoolData = (poolId: string | null, userAddress?: string) => {
   const [poolData, setPoolData] = useState({

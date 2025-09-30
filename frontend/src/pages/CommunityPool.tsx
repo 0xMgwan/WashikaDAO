@@ -48,7 +48,7 @@ const CommunityPool: React.FC = () => {
       // Call the pool-factory join-pool function with pool ID
       await openContractCall({
         contractAddress: 'STKV0VGBVWGZMGRCQR3SY6R11FED3FW4WRYMWF28',
-        contractName: 'pool-factory-v2',
+        contractName: 'pool-factory-v3',
         functionName: 'join-pool',
         functionArgs: [uintCV(parseInt(selectedPool.id))],
         postConditionMode: PostConditionMode.Allow,
@@ -91,7 +91,7 @@ const CommunityPool: React.FC = () => {
       // Contribute to specific pool via factory
       await openContractCall({
         contractAddress: 'STKV0VGBVWGZMGRCQR3SY6R11FED3FW4WRYMWF28',
-        contractName: 'pool-factory-v2',
+        contractName: 'pool-factory-v3',
         functionName: 'contribute-to-pool',
         functionArgs: [uintCV(parseInt(selectedPool.id))],
         postConditionMode: PostConditionMode.Allow,
