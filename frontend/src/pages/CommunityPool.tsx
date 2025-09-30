@@ -3,6 +3,7 @@ import { Users, Calendar, TrendingUp, DollarSign, ArrowRight, CheckCircle } from
 import { useStacks } from '../hooks/useStacks';
 import { openContractCall } from '@stacks/connect';
 import { uintCV, PostConditionMode } from '@stacks/transactions';
+import { StacksTestnet } from '@stacks/network';
 import toast from 'react-hot-toast';
 
 const CommunityPool: React.FC = () => {
@@ -30,6 +31,8 @@ const CommunityPool: React.FC = () => {
     toast.loading('Opening wallet...', { id: 'join-pool' });
     
     try {
+      const network = new StacksTestnet();
+      
       // Call the join-pool function
       await openContractCall({
         contractAddress: 'STKV0VGBVWGZMGRCQR3SY6R11FED3FW4WRYMWF28',
@@ -37,7 +40,7 @@ const CommunityPool: React.FC = () => {
         functionName: 'join-pool',
         functionArgs: [],
         postConditionMode: PostConditionMode.Allow,
-        network: 'testnet',
+        network,
         onFinish: (data) => {
           console.log('Transaction:', data);
           toast.success('Successfully joined the community pool! 🎉', { id: 'join-pool' });
@@ -70,6 +73,8 @@ const CommunityPool: React.FC = () => {
     toast.loading('Opening wallet...', { id: 'contribute' });
     
     try {
+      const network = new StacksTestnet();
+      
       // Convert STX to microSTX (1 STX = 1,000,000 microSTX)
       const amountInMicroSTX = Math.floor(parseFloat(contributionAmount) * 1000000);
       
@@ -79,7 +84,7 @@ const CommunityPool: React.FC = () => {
         functionName: 'contribute',
         functionArgs: [uintCV(amountInMicroSTX)],
         postConditionMode: PostConditionMode.Allow,
-        network: 'testnet',
+        network,
         onFinish: (data) => {
           console.log('Transaction:', data);
           toast.success(`Successfully contributed ${contributionAmount} STX! 💰`, { id: 'contribute' });
