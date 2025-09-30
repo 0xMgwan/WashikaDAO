@@ -91,6 +91,12 @@ clarity_version = 2
 epoch = "2.4"
 depends_on = ["oracle-price-trait", "dao-governable-trait"]
 
+[contracts.community-pool]
+path = "contracts/community-pool.clar"
+clarity_version = 2
+epoch = "2.4"
+depends_on = ["dao-governable-trait"]
+
 [repl]
 costs_version = 2
 parser_version = 2
