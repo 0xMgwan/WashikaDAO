@@ -3,7 +3,7 @@ import { callReadOnlyFunction, cvToJSON } from '@stacks/transactions';
 import { StacksTestnet } from '@stacks/network';
 
 const CONTRACT_ADDRESS = 'STKV0VGBVWGZMGRCQR3SY6R11FED3FW4WRYMWF28';
-const CONTRACT_NAME = 'pool-factory';
+const CONTRACT_NAME = 'pool-factory-v2';
 
 interface Pool {
   id: string;
