@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Users, Calendar, DollarSign, ArrowRight, Search } from 'lucide-react';
+import { Plus, Users, Calendar, DollarSign, ArrowRight, Search, Share2, Copy } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useStacks } from '../hooks/useStacks';
 import { usePoolFactory } from '../hooks/usePoolFactory';
@@ -18,6 +18,13 @@ const PoolSelection: React.FC = () => {
   const filteredPools = pools.filter(pool =>
     pool.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const handleSharePool = (pool: any, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const poolUrl = `${window.location.origin}/pools?pool=${pool.id}`;
+    navigator.clipboard.writeText(poolUrl);
+    toast.success('Pool link copied to clipboard! 📋');
+  };
 
   return (
     <div className="space-y-8">
@@ -66,9 +73,18 @@ const PoolSelection: React.FC = () => {
             >
               <div className="flex items-start justify-between mb-4">
                 <h3 className="text-xl font-bold text-gray-900">{pool.name}</h3>
-                <span className="px-3 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-full">
-                  Active
-                </span>
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={(e) => handleSharePool(pool, e)}
+                    className="p-2 hover:bg-purple-50 rounded-lg transition-colors"
+                    title="Share pool"
+                  >
+                    <Share2 size={18} className="text-purple-600" />
+                  </button>
+                  <span className="px-3 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-full">
+                    Active
+                  </span>
+                </div>
               </div>
 
               <div className="space-y-3 mb-6">

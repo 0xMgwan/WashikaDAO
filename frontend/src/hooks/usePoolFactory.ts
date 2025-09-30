@@ -40,9 +40,9 @@ export const usePoolFactory = () => {
         setPoolCount(count);
 
         // Fetch all pools
+        const { uintCV } = await import('@stacks/transactions');
         const poolPromises = [];
         for (let i = 0; i < count; i++) {
-          const { uintCV } = await import('@stacks/transactions');
           poolPromises.push(
             callReadOnlyFunction({
               contractAddress: CONTRACT_ADDRESS,
