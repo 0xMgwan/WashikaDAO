@@ -2,36 +2,18 @@ import React, { useState } from 'react';
 import { Plus, Users, Calendar, DollarSign, ArrowRight, Search } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useStacks } from '../hooks/useStacks';
+import { usePoolFactory } from '../hooks/usePoolFactory';
+import { openContractCall } from '@stacks/connect';
+import { stringUtf8CV, uintCV, stringAsciiCV, PostConditionMode } from '@stacks/transactions';
+import { StacksTestnet } from '@stacks/network';
 import toast from 'react-hot-toast';
-
-interface Pool {
-  id: string;
-  name: string;
-  members: number;
-  contributionAmount: number;
-  cycleDays: number;
-  currentRound: number;
-  creator: string;
-}
 
 const PoolSelection: React.FC = () => {
   const navigate = useNavigate();
   const { userData } = useStacks();
+  const { pools, loading } = usePoolFactory();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  
-  // Mock pools - will be replaced with real data
-  const [pools] = useState<Pool[]>([
-    {
-      id: 'rosca-pool',
-      name: 'Global Community Pool',
-      members: 0,
-      contributionAmount: 10,
-      cycleDays: 7,
-      currentRound: 0,
-      creator: 'STKV0VGBVWGZMGRCQR3SY6R11FED3FW4WRYMWF28',
-    },
-  ]);
 
   const filteredPools = pools.filter(pool =>
     pool.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -69,58 +51,65 @@ const PoolSelection: React.FC = () => {
       </div>
 
       {/* Pools Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredPools.map((pool) => (
-          <div
-            key={pool.id}
-            className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-lg transition-shadow cursor-pointer"
-            onClick={() => navigate('/community-pool')}
-          >
-            <div className="flex items-start justify-between mb-4">
-              <h3 className="text-xl font-bold text-gray-900">{pool.name}</h3>
-              <span className="px-3 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-full">
-                Active
-              </span>
+      {loading ? (
+        <div className="text-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
+          <p className="text-gray-500 mt-4">Loading pools...</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredPools.map((pool) => (
+            <div
+              key={pool.id}
+              className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-lg transition-shadow cursor-pointer"
+              onClick={() => navigate('/community-pool')}
+            >
+              <div className="flex items-start justify-between mb-4">
+                <h3 className="text-xl font-bold text-gray-900">{pool.name}</h3>
+                <span className="px-3 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-full">
+                  Active
+                </span>
+              </div>
+
+              <div className="space-y-3 mb-6">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600 flex items-center space-x-2">
+                    <Users size={16} />
+                    <span>Max Members</span>
+                  </span>
+                  <span className="font-semibold text-gray-900">{pool.maxMembers}</span>
+                </div>
+
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600 flex items-center space-x-2">
+                    <DollarSign size={16} />
+                    <span>Contribution</span>
+                  </span>
+                  <span className="font-semibold text-gray-900">{(pool.contributionAmount / 1000000).toFixed(2)} STX</span>
+                </div>
+
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600 flex items-center space-x-2">
+                    <Calendar size={16} />
+                    <span>Cycle</span>
+                  </span>
+                  <span className="font-semibold text-gray-900">{Math.floor(pool.cycleBlocks / 144)} days</span>
+                </div>
+
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600">Creator</span>
+                  <span className="font-semibold text-gray-900 font-mono text-xs">{pool.creator.slice(0, 8)}...</span>
+                </div>
+              </div>
+
+              <button className="w-full bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700 transition-colors flex items-center justify-center space-x-2">
+                <span>Join Pool</span>
+                <ArrowRight size={18} />
+              </button>
             </div>
-
-            <div className="space-y-3 mb-6">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600 flex items-center space-x-2">
-                  <Users size={16} />
-                  <span>Members</span>
-                </span>
-                <span className="font-semibold text-gray-900">{pool.members}</span>
-              </div>
-
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600 flex items-center space-x-2">
-                  <DollarSign size={16} />
-                  <span>Contribution</span>
-                </span>
-                <span className="font-semibold text-gray-900">{pool.contributionAmount} STX</span>
-              </div>
-
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600 flex items-center space-x-2">
-                  <Calendar size={16} />
-                  <span>Cycle</span>
-                </span>
-                <span className="font-semibold text-gray-900">{pool.cycleDays} days</span>
-              </div>
-
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600">Current Round</span>
-                <span className="font-semibold text-gray-900">#{pool.currentRound}</span>
-              </div>
-            </div>
-
-            <button className="w-full bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700 transition-colors flex items-center justify-center space-x-2">
-              <span>Join Pool</span>
-              <ArrowRight size={18} />
-            </button>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       {filteredPools.length === 0 && (
         <div className="text-center py-12">
@@ -134,7 +123,10 @@ const PoolSelection: React.FC = () => {
           onClose={() => setShowCreateModal(false)}
           onSuccess={() => {
             setShowCreateModal(false);
-            toast.success('Pool created successfully!');
+            // Refresh page to show new pool
+            setTimeout(() => {
+              window.location.reload();
+            }, 3000);
           }}
         />
       )}
@@ -156,15 +148,43 @@ const CreatePoolModal: React.FC<CreatePoolModalProps> = ({ onClose, onSuccess })
     description: '',
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Deploy new pool contract
-    toast.loading('Creating pool...', { id: 'create-pool' });
+    toast.loading('Registering pool...', { id: 'create-pool' });
     
-    setTimeout(() => {
-      toast.success('Pool created! Contract deploying...', { id: 'create-pool' });
-      onSuccess();
-    }, 2000);
+    try {
+      const network = new StacksTestnet();
+      
+      // Convert days to blocks (approx 144 blocks per day)
+      const cycleBlocks = parseInt(formData.cycleDays) * 144;
+      const contributionMicroSTX = Math.floor(parseFloat(formData.contributionAmount) * 1000000);
+      
+      await openContractCall({
+        contractAddress: 'STKV0VGBVWGZMGRCQR3SY6R11FED3FW4WRYMWF28',
+        contractName: 'pool-factory',
+        functionName: 'register-pool',
+        functionArgs: [
+          stringUtf8CV(formData.name),
+          uintCV(contributionMicroSTX),
+          uintCV(cycleBlocks),
+          uintCV(parseInt(formData.maxMembers)),
+          stringAsciiCV(`pool-${Date.now()}`), // Unique contract ID
+        ],
+        postConditionMode: PostConditionMode.Allow,
+        network,
+        onFinish: (data) => {
+          console.log('Pool registered:', data);
+          toast.success('Pool created successfully! 🎉', { id: 'create-pool' });
+          onSuccess();
+        },
+        onCancel: () => {
+          toast.dismiss('create-pool');
+        },
+      });
+    } catch (error) {
+      console.error('Error creating pool:', error);
+      toast.error('Failed to create pool', { id: 'create-pool' });
+    }
   };
 
   return (
