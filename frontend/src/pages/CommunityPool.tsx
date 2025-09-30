@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Users, Calendar, TrendingUp, DollarSign, ArrowRight, CheckCircle } from 'lucide-react';
+import { Users, Calendar, TrendingUp, DollarSign, ArrowRight, CheckCircle, Gift } from 'lucide-react';
 import { useStacks } from '../hooks/useStacks';
+import { useCommunityPool } from '../hooks/useCommunityPool';
 import { openContractCall } from '@stacks/connect';
 import { uintCV, PostConditionMode } from '@stacks/transactions';
 import { StacksTestnet } from '@stacks/network';
@@ -8,18 +9,11 @@ import toast from 'react-hot-toast';
 
 const CommunityPool: React.FC = () => {
   const { userData } = useStacks();
+  const poolData = useCommunityPool(userData.address || undefined);
   const [contributionAmount, setContributionAmount] = useState('');
   const [isJoining, setIsJoining] = useState(false);
   const [isContributing, setIsContributing] = useState(false);
-
-  // Mock data - will be replaced with real contract calls
-  const poolData = {
-    totalMembers: 0,
-    currentCycle: 0,
-    poolBalance: 0,
-    yourContribution: 0,
-    isMember: false,
-  };
+  const [isClaiming, setIsClaiming] = useState(false);
 
   const handleJoinPool = async () => {
     if (!userData.isSignedIn) {
@@ -127,7 +121,9 @@ const CommunityPool: React.FC = () => {
             <span className="text-gray-600 text-sm">Total Members</span>
             <Users className="text-green-600" size={20} />
           </div>
-          <div className="text-2xl font-bold text-gray-900">{poolData.totalMembers}</div>
+          <div className="text-2xl font-bold text-gray-900">
+            {poolData.loading ? '...' : poolData.totalMembers}
+          </div>
         </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
@@ -135,7 +131,9 @@ const CommunityPool: React.FC = () => {
             <span className="text-gray-600 text-sm">Current Cycle</span>
             <Calendar className="text-blue-600" size={20} />
           </div>
-          <div className="text-2xl font-bold text-gray-900">#{poolData.currentCycle}</div>
+          <div className="text-2xl font-bold text-gray-900">
+            #{poolData.loading ? '...' : poolData.currentCycle}
+          </div>
         </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
@@ -143,15 +141,19 @@ const CommunityPool: React.FC = () => {
             <span className="text-gray-600 text-sm">Pool Balance</span>
             <DollarSign className="text-purple-600" size={20} />
           </div>
-          <div className="text-2xl font-bold text-gray-900">{poolData.poolBalance} STX</div>
+          <div className="text-2xl font-bold text-gray-900">
+            {poolData.loading ? '...' : (poolData.poolBalance / 1000000).toFixed(2)} STX
+          </div>
         </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-gray-600 text-sm">Your Contribution</span>
+            <span className="text-gray-600 text-sm">Your Total</span>
             <TrendingUp className="text-orange-600" size={20} />
           </div>
-          <div className="text-2xl font-bold text-gray-900">{poolData.yourContribution} STX</div>
+          <div className="text-2xl font-bold text-gray-900">
+            {poolData.loading ? '...' : (poolData.yourTotalContributions / 1000000).toFixed(2)} STX
+          </div>
         </div>
       </div>
 
