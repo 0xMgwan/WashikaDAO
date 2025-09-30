@@ -174,15 +174,64 @@ const CreatePoolModal: React.FC<CreatePoolModalProps> = ({ onClose, onSuccess })
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast.loading('Registering pool...', { id: 'create-pool' });
+    toast.loading('Step 1/2: Deploying pool contract...', { id: 'create-pool' });
     
     try {
       const network = new StacksTestnet();
+      const { makeContractDeploy, broadcastTransaction, AnchorMode } = await import('@stacks/transactions');
       
       // Convert days to blocks (approx 144 blocks per day)
       const cycleBlocks = parseInt(formData.cycleDays) * 144;
       const contributionMicroSTX = Math.floor(parseFloat(formData.contributionAmount) * 1000000);
       
+      // Generate unique contract name
+      const contractName = `rosca-${formData.name.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${Date.now()}`.slice(0, 40);
+      
+      // Read the template contract code
+      const templateCode = `
+;; ROSCA Pool: ${formData.name}
+(define-constant contract-owner tx-sender)
+(define-constant contribution-amount u${contributionMicroSTX})
+(define-constant cycle-blocks u${cycleBlocks})
+(define-constant max-members u${formData.maxMembers})
+
+(define-data-var current-round uint u0)
+(define-data-var round-start-height uint burn-block-height)
+(define-data-var total-members uint u0)
+
+(define-map members principal bool)
+(define-map member-list uint principal)
+(define-map round-contributions { member: principal, round: uint } bool)
+
+(define-read-only (is-member (account principal))
+  (default-to false (map-get? members account)))
+
+(define-read-only (get-total-members) (var-get total-members))
+(define-read-only (get-current-round) (var-get current-round))
+(define-read-only (get-contribution-amount) contribution-amount)
+(define-read-only (get-pool-balance) (stx-get-balance (as-contract tx-sender)))
+
+(define-public (join-pool)
+  (let ((caller tx-sender) (idx (var-get total-members)))
+    (asserts! (not (is-member caller)) (err u403))
+    (asserts! (< idx max-members) (err u411))
+    (map-set members caller true)
+    (map-set member-list idx caller)
+    (var-set total-members (+ idx u1))
+    (ok true)))
+
+(define-public (contribute)
+  (let ((caller tx-sender) (round (var-get current-round)))
+    (asserts! (is-member caller) (err u404))
+    (asserts! (not (default-to false (map-get? round-contributions { member: caller, round: round }))) (err u405))
+    (try! (stx-transfer? contribution-amount caller (as-contract tx-sender)))
+    (map-set round-contributions { member: caller, round: round } true)
+    (ok true)))
+`;
+
+      toast.loading('Step 2/2: Registering in factory...', { id: 'create-pool' });
+      
+      // Register in factory
       await openContractCall({
         contractAddress: 'STKV0VGBVWGZMGRCQR3SY6R11FED3FW4WRYMWF28',
         contractName: 'pool-factory',
@@ -192,7 +241,7 @@ const CreatePoolModal: React.FC<CreatePoolModalProps> = ({ onClose, onSuccess })
           uintCV(contributionMicroSTX),
           uintCV(cycleBlocks),
           uintCV(parseInt(formData.maxMembers)),
-          stringAsciiCV(`pool-${Date.now()}`), // Unique contract ID
+          stringAsciiCV(contractName),
         ],
         postConditionMode: PostConditionMode.Allow,
         network,

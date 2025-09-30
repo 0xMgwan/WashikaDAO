@@ -86,18 +86,21 @@ const CommunityPool: React.FC = () => {
     
     try {
       const network = new StacksTestnet();
+      const { uintCV } = await import('@stacks/transactions');
       
-      // ROSCA uses fixed contribution amount
+      // Use the selected pool's contribution amount
+      const contributionAmount = selectedPool.contributionAmount;
+      
       await openContractCall({
         contractAddress: 'STKV0VGBVWGZMGRCQR3SY6R11FED3FW4WRYMWF28',
         contractName: 'rosca-pool',
         functionName: 'contribute',
-        functionArgs: [],
+        functionArgs: [uintCV(contributionAmount)],
         postConditionMode: PostConditionMode.Allow,
         network,
         onFinish: (data) => {
           console.log('Transaction:', data);
-          toast.success(`Successfully contributed ${(poolData.contributionAmount / 1000000).toFixed(2)} STX! 💰`, { id: 'contribute' });
+          toast.success(`Successfully contributed ${(contributionAmount / 1000000).toFixed(2)} STX! 💰`, { id: 'contribute' });
           setIsContributing(false);
         },
         onCancel: () => {
@@ -238,18 +241,25 @@ const CommunityPool: React.FC = () => {
               </div>
 
               <div className="mb-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                <p className="text-yellow-800 text-sm">
-                  ℹ️ This pool is registered but not yet deployed. Join to activate it!
+                <p className="text-yellow-800 text-sm font-semibold mb-2">
+                  ⚠️ Pool Contract Not Yet Deployed
+                </p>
+                <p className="text-yellow-700 text-xs">
+                  This pool is registered in the factory but needs a dedicated ROSCA contract deployed. 
+                  Contributions will be available once the contract is deployed. You can still join to reserve your spot!
                 </p>
               </div>
 
               <button
-                onClick={handleContribute}
-                disabled={isContributing || !userData.isSignedIn}
-                className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={true}
+                className="w-full bg-gray-400 text-white py-3 px-6 rounded-lg font-semibold cursor-not-allowed opacity-50"
               >
-                {isContributing ? 'Contributing...' : 'Contribute to Pool'}
+                Contributions Coming Soon
               </button>
+              
+              <p className="text-xs text-gray-500 mt-2 text-center">
+                Contract deployment in progress...
+              </p>
             </>
           )}
 
