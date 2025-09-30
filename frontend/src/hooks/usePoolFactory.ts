@@ -57,25 +57,32 @@ export const usePoolFactory = () => {
 
         const poolResults = await Promise.all(poolPromises);
         
-        const fetchedPools: Pool[] = poolResults
-          .map((result, index) => {
-            const data = cvToJSON(result);
-            if (data.value) {
-              return {
-                id: index.toString(),
-                name: data.value.name.value,
-                creator: data.value.creator.value,
-                contributionAmount: Number(data.value['contribution-amount'].value),
-                cycleBlocks: Number(data.value['cycle-blocks'].value),
-                maxMembers: Number(data.value['max-members'].value),
-                createdAt: Number(data.value['created-at'].value),
-                contractId: data.value['contract-id'].value,
-              };
+        const fetchedPools: Pool[] = [];
+        
+        for (let i = 0; i < poolResults.length; i++) {
+          try {
+            const data = cvToJSON(poolResults[i]);
+            console.log('Pool data:', i, data);
+            
+            if (data && data.value && data.value.value) {
+              const poolValue = data.value.value;
+              fetchedPools.push({
+                id: i.toString(),
+                name: poolValue.name.value,
+                creator: poolValue.creator.value,
+                contributionAmount: Number(poolValue['contribution-amount'].value),
+                cycleBlocks: Number(poolValue['cycle-blocks'].value),
+                maxMembers: Number(poolValue['max-members'].value),
+                createdAt: Number(poolValue['created-at'].value),
+                contractId: poolValue['contract-id'].value,
+              });
             }
-            return null;
-          })
-          .filter((pool): pool is Pool => pool !== null);
+          } catch (error) {
+            console.error('Error parsing pool', i, error);
+          }
+        }
 
+        console.log('Fetched pools:', fetchedPools);
         setPools(fetchedPools);
         setLoading(false);
       } catch (error) {
