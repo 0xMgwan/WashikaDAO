@@ -249,10 +249,10 @@ const Dashboard: React.FC = () => {
           </div>
           
           <button 
-            onClick={() => window.location.href = '/savings'}
+            onClick={() => window.location.href = '/community-pool'}
             className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition-colors font-medium"
           >
-            Start Saving Today
+            Join Community Pool
           </button>
         </div>
 
