@@ -1,17 +1,31 @@
-import React, { useState } from 'react';
-import { Users, Calendar, TrendingUp, DollarSign, ArrowRight, CheckCircle, Gift, Award } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Users, Calendar, TrendingUp, DollarSign, ArrowRight, CheckCircle } from 'lucide-react';
 import { useStacks } from '../hooks/useStacks';
 import { useRoscaPool } from '../hooks/useRoscaPool';
+import { usePoolFactory } from '../hooks/usePoolFactory';
 import { openContractCall } from '@stacks/connect';
 import { PostConditionMode } from '@stacks/transactions';
 import { StacksTestnet } from '@stacks/network';
+import { useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
 const CommunityPool: React.FC = () => {
   const { userData } = useStacks();
+  const [searchParams] = useSearchParams();
+  const poolId = searchParams.get('id');
+  const { pools } = usePoolFactory();
+  const [selectedPool, setSelectedPool] = useState<any>(null);
+  
   const poolData = useRoscaPool(userData.address || undefined);
   const [isJoining, setIsJoining] = useState(false);
   const [isContributing, setIsContributing] = useState(false);
+
+  useEffect(() => {
+    if (poolId && pools.length > 0) {
+      const pool = pools.find(p => p.id === poolId);
+      setSelectedPool(pool);
+    }
+  }, [poolId, pools]);
 
   const handleJoinPool = async () => {
     if (!userData.isSignedIn) {
@@ -100,17 +114,19 @@ const CommunityPool: React.FC = () => {
   return (
     <div className="space-y-8">
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-green-600 to-emerald-600 rounded-2xl p-8 text-white">
-        <div className="flex items-center space-x-2 mb-4">
-          <Users size={24} />
-          <span className="font-medium">Community Pool</span>
+      <div className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl p-8 text-white mb-8">
+        <div className="flex items-center space-x-3 mb-4">
+          <Users size={32} />
+          <h2 className="text-sm font-semibold uppercase tracking-wide">Community Pool</h2>
         </div>
         <h1 className="text-4xl font-bold mb-4">
-          Save Together, Grow Together
+          {selectedPool ? selectedPool.name : 'Save Together, Grow Together'}
         </h1>
-        <p className="text-xl text-green-100 mb-6 max-w-2xl">
-          Join our community pool where members contribute weekly and receive monthly distributions. 
-          No minimum required - every contribution counts!
+        <p className="text-xl text-green-50">
+          {selectedPool 
+            ? `Contribute ${(selectedPool.contributionAmount / 1000000).toFixed(2)} STX every ${Math.floor(selectedPool.cycleBlocks / 144)} days. ${selectedPool.maxMembers} members rotating.`
+            : 'Join our community pool where members contribute weekly and receive monthly distributions. No minimum required - every contribution counts!'
+          }
         </p>
       </div>
 

@@ -24,9 +24,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: Home },
     { name: 'Pools', href: '/pools', icon: Users },
-    { name: 'Profile', href: '/profile', icon: User },
     { name: 'Governance', href: '/governance', icon: Vote },
     { name: 'Savings', href: '/savings', icon: PiggyBank },
+    { name: 'Profile', href: '/profile', icon: User },
   ];
 
   const isActive = (path: string) => {

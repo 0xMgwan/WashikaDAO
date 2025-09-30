@@ -69,7 +69,7 @@ const PoolSelection: React.FC = () => {
             <div
               key={pool.id}
               className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-lg transition-shadow cursor-pointer"
-              onClick={() => navigate('/community-pool')}
+              onClick={() => navigate(`/community-pool?id=${pool.id}`)}
             >
               <div className="flex items-start justify-between mb-4">
                 <h3 className="text-xl font-bold text-gray-900">{pool.name}</h3>
