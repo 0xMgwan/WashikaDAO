@@ -138,7 +138,7 @@ const CommunityPool: React.FC = () => {
             <Users className="text-green-600" size={20} />
           </div>
           <div className="text-2xl font-bold text-gray-900">
-            {poolData.loading ? '...' : poolData.totalMembers}
+            {selectedPool ? '0' : (poolData.loading ? '...' : poolData.totalMembers)}
           </div>
         </div>
 
@@ -148,7 +148,7 @@ const CommunityPool: React.FC = () => {
             <Calendar className="text-blue-600" size={20} />
           </div>
           <div className="text-2xl font-bold text-gray-900">
-            #{poolData.loading ? '...' : poolData.currentRound}
+            #{selectedPool ? '0' : (poolData.loading ? '...' : poolData.currentRound)}
           </div>
         </div>
 
@@ -158,7 +158,7 @@ const CommunityPool: React.FC = () => {
             <DollarSign className="text-purple-600" size={20} />
           </div>
           <div className="text-2xl font-bold text-gray-900">
-            {poolData.loading ? '...' : (poolData.poolBalance / 1000000).toFixed(2)} STX
+            {selectedPool ? '0.00 STX' : (poolData.loading ? '...' : `${(poolData.poolBalance / 1000000).toFixed(2)} STX`)}
           </div>
         </div>
 
@@ -168,7 +168,10 @@ const CommunityPool: React.FC = () => {
             <TrendingUp className="text-orange-600" size={20} />
           </div>
           <div className="text-2xl font-bold text-gray-900">
-            {poolData.loading ? '...' : (poolData.contributionAmount / 1000000).toFixed(2)} STX
+            {selectedPool 
+              ? `${(selectedPool.contributionAmount / 1000000).toFixed(2)} STX`
+              : (poolData.loading ? '...' : `${(poolData.contributionAmount / 1000000).toFixed(2)} STX`)
+            }
           </div>
         </div>
       </div>
@@ -232,7 +235,10 @@ const CommunityPool: React.FC = () => {
 
           <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
             <p className="text-sm text-blue-800 mb-2">
-              <strong>Fixed Contribution:</strong> {(poolData.contributionAmount / 1000000).toFixed(2)} STX
+              <strong>Fixed Contribution:</strong> {selectedPool 
+                ? `${(selectedPool.contributionAmount / 1000000).toFixed(2)} STX`
+                : `${(poolData.contributionAmount / 1000000).toFixed(2)} STX`
+              }
             </p>
             <p className="text-xs text-blue-600">
               All members contribute the same amount each round for fairness.

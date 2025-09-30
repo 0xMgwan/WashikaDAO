@@ -118,10 +118,18 @@ const PoolSelection: React.FC = () => {
                 </div>
               </div>
 
-              <button className="w-full bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700 transition-colors flex items-center justify-center space-x-2">
-                <span>Join Pool</span>
-                <ArrowRight size={18} />
-              </button>
+              <div className="flex space-x-2">
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(`/community-pool?id=${pool.id}`);
+                  }}
+                  className="flex-1 bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700 transition-colors flex items-center justify-center space-x-2"
+                >
+                  <span>View Pool</span>
+                  <ArrowRight size={18} />
+                </button>
+              </div>
             </div>
           ))}
         </div>
