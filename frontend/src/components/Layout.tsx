@@ -3,8 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { 
   Home, 
   Vote, 
-  PiggyBank, 
-  CreditCard, 
+  PiggyBank,
   TrendingUp,
   Menu,
   X,
@@ -21,10 +20,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
 
   const navigation = [
-    { name: 'Dashboard', href: '/', icon: Home },
+    { name: 'Dashboard', href: '/dashboard', icon: Home },
     { name: 'Governance', href: '/governance', icon: Vote },
     { name: 'Savings', href: '/savings', icon: PiggyBank },
-    { name: 'Lending', href: '/lending', icon: CreditCard },
     { name: 'Analytics', href: '/analytics', icon: TrendingUp },
   ];
 

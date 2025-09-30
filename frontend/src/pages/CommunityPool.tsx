@@ -3,6 +3,7 @@ import { Users, Calendar, TrendingUp, DollarSign, ArrowRight, CheckCircle } from
 import { useStacks } from '../hooks/useStacks';
 import { openContractCall } from '@stacks/connect';
 import { uintCV, PostConditionMode } from '@stacks/transactions';
+import toast from 'react-hot-toast';
 
 const CommunityPool: React.FC = () => {
   const { userData } = useStacks();
@@ -21,11 +22,13 @@ const CommunityPool: React.FC = () => {
 
   const handleJoinPool = async () => {
     if (!userData.isSignedIn) {
-      alert('Please connect your wallet first');
+      toast.error('Please connect your wallet first');
       return;
     }
 
     setIsJoining(true);
+    toast.loading('Opening wallet...', { id: 'join-pool' });
+    
     try {
       // Call the join-pool function
       await openContractCall({
@@ -37,32 +40,35 @@ const CommunityPool: React.FC = () => {
         network: 'testnet',
         onFinish: (data) => {
           console.log('Transaction:', data);
-          alert('Successfully joined the community pool!');
+          toast.success('Successfully joined the community pool! 🎉', { id: 'join-pool' });
           setIsJoining(false);
         },
         onCancel: () => {
+          toast.dismiss('join-pool');
           setIsJoining(false);
         },
       });
     } catch (error) {
       console.error('Error joining pool:', error);
-      alert('Failed to join pool. See console for details.');
+      toast.error('Failed to join pool. Please try again.', { id: 'join-pool' });
       setIsJoining(false);
     }
   };
 
   const handleContribute = async () => {
     if (!userData.isSignedIn) {
-      alert('Please connect your wallet first');
+      toast.error('Please connect your wallet first');
       return;
     }
 
     if (!contributionAmount || parseFloat(contributionAmount) <= 0) {
-      alert('Please enter a valid amount');
+      toast.error('Please enter a valid amount');
       return;
     }
 
     setIsContributing(true);
+    toast.loading('Opening wallet...', { id: 'contribute' });
+    
     try {
       // Convert STX to microSTX (1 STX = 1,000,000 microSTX)
       const amountInMicroSTX = Math.floor(parseFloat(contributionAmount) * 1000000);
@@ -76,17 +82,18 @@ const CommunityPool: React.FC = () => {
         network: 'testnet',
         onFinish: (data) => {
           console.log('Transaction:', data);
-          alert(`Successfully contributed ${contributionAmount} STX!`);
+          toast.success(`Successfully contributed ${contributionAmount} STX! 💰`, { id: 'contribute' });
           setContributionAmount('');
           setIsContributing(false);
         },
         onCancel: () => {
+          toast.dismiss('contribute');
           setIsContributing(false);
         },
       });
     } catch (error) {
       console.error('Error contributing:', error);
-      alert('Failed to contribute. See console for details.');
+      toast.error('Failed to contribute. Please try again.', { id: 'contribute' });
       setIsContributing(false);
     }
   };
