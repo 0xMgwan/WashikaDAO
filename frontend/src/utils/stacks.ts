@@ -36,7 +36,7 @@ export const network: StacksNetwork = process.env.NODE_ENV === 'production'
 export const CONTRACT_ADDRESS = 'STKV0VGBVWGZMGRCQR3SY6R11FED3FW4WRYMWF28';
 
 export const CONTRACTS = {
-  GOVERNANCE_TOKEN: 'governance-token',
+  SIMPLE_GOVERNANCE: 'simple-governance',
   WASHIKA_DAO: 'washika-dao',
   TREASURY: 'treasury',
   SAVINGS_STX: 'savings-stx',
@@ -44,7 +44,6 @@ export const CONTRACTS = {
   LENDING_CORE: 'lending-core',
   ORACLE_AGGREGATOR: 'oracle-aggregator',
   TIMELOCK: 'timelock',
-  SIMPLE_GOVERNANCE: 'simple-governance',
 } as const;
 
 // Utility functions
@@ -145,28 +144,56 @@ export const transferSTX = async (
   });
 };
 
-// Governance functions
-export const getTokenBalance = async (address: string) => {
+// Simple Governance functions
+export const getProposalCount = async () => {
   return callReadOnly(
-    CONTRACTS.GOVERNANCE_TOKEN,
-    'get-balance',
-    [principalCV(address)]
+    CONTRACTS.SIMPLE_GOVERNANCE,
+    'get-proposal-count',
+    []
   );
 };
 
-export const getCurrentVotes = async (address: string) => {
+export const getSimpleProposal = async (proposalId: number) => {
   return callReadOnly(
-    CONTRACTS.GOVERNANCE_TOKEN,
-    'get-current-votes',
-    [principalCV(address)]
+    CONTRACTS.SIMPLE_GOVERNANCE,
+    'get-proposal',
+    [uintCV(proposalId)]
   );
 };
 
-export const delegateVotes = async (delegatee: string) => {
+export const createSimpleProposal = async (
+  title: string,
+  description: string,
+  proposalType: string,
+  amount?: number,
+  recipient?: string
+) => {
+  const args: any[] = [
+    stringUtf8CV(title),
+    stringUtf8CV(description),
+    stringAsciiCV(proposalType)
+  ];
+  
+  if (amount !== undefined) {
+    args.push(uintCV(amount));
+  }
+  
+  if (recipient) {
+    args.push(principalCV(recipient));
+  }
+  
   return makeContractCall(
-    CONTRACTS.GOVERNANCE_TOKEN,
-    'delegate',
-    [principalCV(delegatee)]
+    CONTRACTS.SIMPLE_GOVERNANCE,
+    'create-proposal',
+    args
+  );
+};
+
+export const castSimpleVote = async (proposalId: number, support: number) => {
+  return makeContractCall(
+    CONTRACTS.SIMPLE_GOVERNANCE,
+    'cast-vote',
+    [uintCV(proposalId), uintCV(support)]
   );
 };
 
@@ -325,14 +352,52 @@ export const getPrice = async (pair: string) => {
 };
 
 // Utility function to safely extract values from Clarity responses
-export const extractClarityValue = (clarityValue: any): string => {
-  if (!clarityValue) return '0';
-  if (typeof clarityValue === 'string') return clarityValue;
-  if (clarityValue.value !== undefined) return clarityValue.value.toString();
-  if (clarityValue.type === 'uint') return clarityValue.value.toString();
-  if (clarityValue.type === 'int') return clarityValue.value.toString();
-  if (clarityValue.type === 'bool') return clarityValue.value.toString();
-  return '0';
+export const extractClarityValue = (clarityValue: any): any => {
+  if (!clarityValue) return null;
+  
+  // Handle different Clarity types
+  if (clarityValue.type) {
+    switch (clarityValue.type) {
+      case 'uint':
+      case 'int':
+        // Convert BigInt to number for easier handling in UI
+        return typeof clarityValue.value === 'bigint' ? Number(clarityValue.value) : clarityValue.value;
+      case 'bool':
+        return clarityValue.value;
+      case 'string-ascii':
+      case 'string-utf8':
+        return clarityValue.value;
+      case 'tuple':
+        // Extract tuple data - this is likely what proposals are
+        const tupleData: any = {};
+        if (clarityValue.value) {
+          Object.keys(clarityValue.value).forEach(key => {
+            tupleData[key] = extractClarityValue(clarityValue.value[key]);
+          });
+        }
+        return tupleData;
+      case 'optional':
+        // Handle optional values - proposals might be wrapped in optional
+        if (clarityValue.value === null) return null;
+        return extractClarityValue(clarityValue.value);
+      case 'list':
+        return clarityValue.value?.map((item: any) => extractClarityValue(item)) || [];
+      default:
+        return clarityValue.value;
+    }
+  }
+  
+  // Fallback for simple values
+  if (typeof clarityValue === 'string' || typeof clarityValue === 'number') {
+    return clarityValue;
+  }
+  
+  // If it has a value property, extract it
+  if (clarityValue.value !== undefined) {
+    return extractClarityValue(clarityValue.value);
+  }
+  
+  return clarityValue;
 };
 
 // Utility functions for formatting

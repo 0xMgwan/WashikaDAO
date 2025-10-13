@@ -15,8 +15,16 @@ export const useReadOnlyContract = (
 ) => {
   const { userData } = useStacks();
   
+  // Create a serializable query key by converting BigInt to string
+  const serializableArgs = functionArgs.map(arg => {
+    if (arg && typeof arg === 'object' && arg.type && arg.value !== undefined) {
+      return { type: arg.type, value: arg.value.toString() };
+    }
+    return arg;
+  });
+  
   return useQuery(
-    [contractName, functionName, functionArgs, userData.address],
+    [contractName, functionName, serializableArgs, userData.address],
     () => callReadOnly(contractName, functionName, functionArgs, userData.address || undefined),
     {
       enabled: options.enabled !== false,
@@ -88,33 +96,18 @@ export const useContractCall = () => {
   };
 };
 
-// Specific hooks for common contract interactions
-export const useGovernanceToken = (address?: string) => {
-  const { userData } = useStacks();
-  const userAddress = address || userData.address;
-
-  const balance = useReadOnlyContract(
-    'governance-token',
-    'get-balance',
-    userAddress ? [{ type: 'principal', value: userAddress }] : [],
-    { enabled: !!userAddress }
+// Simple governance hook - uses STX balance for voting power
+export const useSimpleGovernance = () => {
+  const proposalCount = useReadOnlyContract(
+    'simple-governance',
+    'get-proposal-count',
+    []
   );
-
-  const currentVotes = useReadOnlyContract(
-    'governance-token',
-    'get-current-votes',
-    userAddress ? [{ type: 'principal', value: userAddress }] : [],
-    { enabled: !!userAddress }
-  );
-
-  const totalSupply = useReadOnlyContract('governance-token', 'get-total-supply');
 
   return {
-    balance: balance.data,
-    currentVotes: currentVotes.data,
-    totalSupply: totalSupply.data,
-    isLoading: balance.isLoading || currentVotes.isLoading || totalSupply.isLoading,
-    error: balance.error || currentVotes.error || totalSupply.error,
+    proposalCount: proposalCount.data,
+    isLoading: proposalCount.isLoading,
+    error: proposalCount.error,
   };
 };
 

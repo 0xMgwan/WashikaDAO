@@ -1,12 +1,10 @@
 import React from 'react';
 import { Wallet, LogOut, User } from 'lucide-react';
-import { connectWallet, disconnectWallet, formatSTX } from '@/utils/stacks';
+import { connectWallet, disconnectWallet } from '@/utils/stacks';
 import { useStacks } from '@/hooks/useStacks';
-import { useGovernanceToken } from '@/hooks/useContract';
 
 const WalletConnect: React.FC = () => {
   const { userData, isLoading } = useStacks();
-  const { balance, currentVotes } = useGovernanceToken();
 
   const handleConnect = () => {
     connectWallet();
@@ -49,16 +47,7 @@ const WalletConnect: React.FC = () => {
           <span className="font-mono">{truncateAddress(userData.address!)}</span>
         </div>
         <div className="flex items-center space-x-4 text-xs text-gray-500">
-          {balance && (
-            <span>
-              {formatSTX(parseInt(balance.value))} WASHA
-            </span>
-          )}
-          {currentVotes && (
-            <span>
-              {formatSTX(parseInt(currentVotes.value))} Votes
-            </span>
-          )}
+          <span>STX Voting Power</span>
         </div>
       </div>
 
