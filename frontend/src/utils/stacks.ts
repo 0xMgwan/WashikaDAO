@@ -33,7 +33,7 @@ export const network: StacksNetwork = process.env.NODE_ENV === 'production'
   : new StacksTestnet();
 
 // Contract addresses (update these with actual deployed addresses)
-export const CONTRACT_ADDRESS = 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM';
+export const CONTRACT_ADDRESS = 'STKV0VGBVWGZMGRCQR3SY6R11FED3FW4WRYMWF28';
 
 export const CONTRACTS = {
   GOVERNANCE_TOKEN: 'governance-token',
@@ -44,6 +44,7 @@ export const CONTRACTS = {
   LENDING_CORE: 'lending-core',
   ORACLE_AGGREGATOR: 'oracle-aggregator',
   TIMELOCK: 'timelock',
+  SIMPLE_GOVERNANCE: 'simple-governance',
 } as const;
 
 // Utility functions

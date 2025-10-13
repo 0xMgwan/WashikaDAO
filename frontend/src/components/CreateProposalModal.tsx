@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { X, AlertCircle, Users, DollarSign } from 'lucide-react';
-import { useContractCall } from '@/hooks/useContract';
 import { useStacks } from '@/hooks/useStacks';
+import { openContractCall } from '@stacks/connect';
+import { stringUtf8CV, stringAsciiCV, uintCV, someCV, noneCV, principalCV } from '@stacks/transactions';
+import { CONTRACT_ADDRESS, network } from '@/utils/stacks';
 import toast from 'react-hot-toast';
 
 interface ProposalType {
@@ -23,7 +25,7 @@ const CreateProposalModal: React.FC<CreateProposalModalProps> = ({
   onSuccess
 }) => {
   const { userData } = useStacks();
-  const { mutate: createProposal, isLoading } = useContractCall();
+  const [isLoading, setIsLoading] = useState(false);
   
   const proposalTypes: ProposalType[] = [
     {
@@ -62,10 +64,14 @@ const CreateProposalModal: React.FC<CreateProposalModalProps> = ({
 
     if (!formData.title.trim()) {
       newErrors.title = 'Title is required';
+    } else if (formData.title.length > 256) {
+      newErrors.title = 'Title must be 256 characters or less';
     }
 
     if (!formData.description.trim()) {
       newErrors.description = 'Description is required';
+    } else if (formData.description.length > 1024) {
+      newErrors.description = 'Description must be 1024 characters or less';
     }
 
     if (!formData.type) {
@@ -93,25 +99,79 @@ const CreateProposalModal: React.FC<CreateProposalModalProps> = ({
       return;
     }
 
-    try {
-      const fullDescription = `${formData.title}\n\n${formData.description}\n\nType: ${formData.type}${formData.amount ? `\nAmount: ${formData.amount} STX` : ''}${formData.recipient ? `\nRecipient: ${formData.recipient}` : ''}`;
+    // Check if wallet is connected
+    if (!userData.isSignedIn) {
+      toast.error('Please connect your wallet first');
+      return;
+    }
 
-      // Create a simple proposal with minimal contract interaction
-      await createProposal({
-        contractName: 'washika-dao',
-        functionName: 'propose',
-        functionArgs: [
-          { type: 'list', value: [{ type: 'principal', value: 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.washika-dao' }] },
-          { type: 'list', value: [{ type: 'uint', value: formData.amount || '0' }] },
-          { type: 'list', value: [{ type: 'string-ascii', value: 'community-vote' }] },
-          { type: 'list', value: [{ type: 'buff', value: '' }] },
-          { type: 'string-utf8', value: fullDescription }
-        ]
+    console.log('Wallet data:', userData);
+
+    try {
+      console.log('Creating proposal on blockchain...', {
+        title: formData.title,
+        description: formData.description,
+        type: formData.type,
+        amount: formData.amount,
+        recipient: formData.recipient,
+        userAddress: userData.address
       });
 
-      toast.success('Proposal created successfully!');
+      setIsLoading(true);
+      
+      // Create proposal on blockchain using deployed simple-governance contract
+      const amount = formData.amount ? Math.floor(Number(formData.amount) * 1000000) : 0;
+      
+      // Prepare function arguments - match contract signature exactly
+      const functionArgs = [
+        stringUtf8CV(formData.title),
+        stringUtf8CV(formData.description),
+        stringAsciiCV(formData.type || 'general'), // Ensure we have a valid type
+        uintCV(amount),
+        formData.recipient ? someCV(principalCV(formData.recipient)) : noneCV()
+      ];
+      
+      console.log('Function arguments prepared:', {
+        title: formData.title,
+        description: formData.description,
+        type: formData.type || 'general',
+        amount: amount,
+        recipient: formData.recipient || 'none'
+      });
+      
+      console.log('Opening contract call with args:', {
+        contractAddress: CONTRACT_ADDRESS,
+        contractName: 'simple-governance',
+        functionName: 'create-proposal',
+        functionArgs,
+        network
+      });
+      
+      // Use openContractCall directly to ensure wallet popup
+      await new Promise((resolve, reject) => {
+        openContractCall({
+          contractAddress: CONTRACT_ADDRESS,
+          contractName: 'simple-governance',
+          functionName: 'create-proposal',
+          functionArgs,
+          network,
+          onFinish: (data) => {
+            console.log('Transaction completed:', data);
+            resolve(data);
+          },
+          onCancel: () => {
+            console.log('Transaction cancelled by user');
+            reject(new Error('Transaction cancelled'));
+          },
+        });
+      });
+
+      toast.success('Proposal created successfully! Check your wallet for transaction confirmation.');
       onClose();
-      onSuccess?.();
+      // Wait a bit for transaction to be processed before refreshing
+      setTimeout(() => {
+        onSuccess?.();
+      }, 2000);
       
       // Reset form
       setFormData({
@@ -125,7 +185,17 @@ const CreateProposalModal: React.FC<CreateProposalModalProps> = ({
       
     } catch (error) {
       console.error('Failed to create proposal:', error);
-      toast.error('Failed to create proposal. Please try again.');
+      if (error instanceof Error) {
+        if (error.message === 'Transaction cancelled') {
+          toast.error('Transaction was cancelled');
+        } else {
+          toast.error(`Failed to create proposal: ${error.message}`);
+        }
+      } else {
+        toast.error('Failed to create proposal. Please try again.');
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 

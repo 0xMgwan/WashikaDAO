@@ -97,6 +97,11 @@ clarity_version = 2
 epoch = "2.4"
 depends_on = ["dao-governable-trait"]
 
+[contracts.simple-governance]
+path = "contracts/simple-governance.clar"
+clarity_version = 2
+epoch = "2.4"
+
 [repl]
 costs_version = 2
 parser_version = 2
