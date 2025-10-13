@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { callReadOnly, makeContractCall, waitForTransaction } from '@/utils/stacks';
 import { useStacks } from './useStacks';
@@ -157,6 +157,31 @@ export const useProposal = (proposalId: number) => {
     state: proposalState.data,
     isLoading: proposal.isLoading || proposalState.isLoading,
     error: proposal.error || proposalState.error,
+  };
+};
+
+// Helper function to get proposal state
+export const getProposalState = (proposalId: number) => {
+  return useReadOnlyContract(
+    'washika-dao',
+    'get-proposal-state',
+    [{ type: 'uint', value: proposalId }],
+    { enabled: proposalId > 0 }
+  );
+};
+
+// Hook to check if user is a pool member
+export const usePoolMembership = () => {
+  const { userData } = useStacks();
+  const { userShares } = useSavingsSTX();
+  
+  const isPoolMember = userData.isSignedIn && 
+    userShares && 
+    parseInt((userShares as any)?.value || '0') > 0;
+    
+  return {
+    isPoolMember,
+    shares: userShares
   };
 };
 

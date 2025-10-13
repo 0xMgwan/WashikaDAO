@@ -4,7 +4,6 @@ import {
   Home, 
   Vote, 
   PiggyBank,
-  TrendingUp,
   Menu,
   X,
   ExternalLink,

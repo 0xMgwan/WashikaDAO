@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus, Users, Calendar, DollarSign, ArrowRight, Search, Share2, Copy } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useStacks } from '../hooks/useStacks';
 import { usePoolFactory } from '../hooks/usePoolFactory';
 import { openContractCall } from '@stacks/connect';
@@ -10,10 +10,18 @@ import toast from 'react-hot-toast';
 
 const PoolSelection: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { userData } = useStacks();
   const { pools, loading } = usePoolFactory();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Check for action=create query parameter
+  useEffect(() => {
+    if (searchParams.get('action') === 'create') {
+      setShowCreateModal(true);
+    }
+  }, [searchParams]);
 
   const filteredPools = pools.filter(pool =>
     pool.name.toLowerCase().includes(searchTerm.toLowerCase())

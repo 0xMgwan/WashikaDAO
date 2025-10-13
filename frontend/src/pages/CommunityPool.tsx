@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Calendar, TrendingUp, DollarSign, ArrowRight, CheckCircle } from 'lucide-react';
+import { Users, Calendar, TrendingUp, DollarSign, ArrowRight, CheckCircle, Vote, UserCheck } from 'lucide-react';
 import { useStacks } from '../hooks/useStacks';
 import { usePoolFactory } from '../hooks/usePoolFactory';
 import { usePoolData } from '../hooks/usePoolData';
 import { openContractCall } from '@stacks/connect';
 import { PostConditionMode } from '@stacks/transactions';
 import { StacksTestnet } from '@stacks/network';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
 const CommunityPool: React.FC = () => {
+  const navigate = useNavigate();
   const { userData } = useStacks();
   const [searchParams] = useSearchParams();
   const poolId = searchParams.get('id');
@@ -20,6 +21,9 @@ const CommunityPool: React.FC = () => {
   const poolData = usePoolData(poolId, userData.address || undefined);
   const [isJoining, setIsJoining] = useState(false);
   const [isContributing, setIsContributing] = useState(false);
+  
+  // Check if user is a member (has contributed or joined)
+  const isMember = poolData.isMember || poolData.hasContributed;
 
   useEffect(() => {
     if (poolId && pools.length > 0) {
@@ -58,6 +62,8 @@ const CommunityPool: React.FC = () => {
           console.log('Transaction:', data);
           toast.success(`Successfully joined ${selectedPool.name}! 🎉`, { id: 'join-pool' });
           setIsJoining(false);
+          // Refresh pool data to update member status
+          setTimeout(() => window.location.reload(), 2000);
         },
         onCancel: () => {
           toast.dismiss('join-pool');
@@ -101,6 +107,8 @@ const CommunityPool: React.FC = () => {
           console.log('Transaction:', data);
           toast.success(`Successfully contributed ${(selectedPool.contributionAmount / 1000000).toFixed(2)} STX! 💰`, { id: 'contribute' });
           setIsContributing(false);
+          // Refresh pool data to update member status
+          setTimeout(() => window.location.reload(), 2000);
         },
         onCancel: () => {
           toast.dismiss('contribute');
@@ -134,7 +142,7 @@ const CommunityPool: React.FC = () => {
       </div>
 
       {/* Pool Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-2">
             <span className="text-gray-600 text-sm">Total Members</span>
@@ -173,50 +181,113 @@ const CommunityPool: React.FC = () => {
           <div className="text-2xl font-bold text-gray-900">
             {selectedPool 
               ? `${(selectedPool.contributionAmount / 1000000).toFixed(2)} STX`
-              : (poolData.loading ? '...' : `${(poolData.contributionAmount / 1000000).toFixed(2)} STX`)
+              : (poolData.loading ? '...' : '2.00 STX')
             }
           </div>
+        </div>
+
+        {/* User Contributions */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-gray-600 text-sm">Your Contributions</span>
+            <DollarSign className="text-green-600" size={20} />
+          </div>
+          <div className="text-2xl font-bold text-gray-900">
+            {isMember ? (
+              poolData.loading ? '...' : `${(poolData.poolBalance / 1000000).toFixed(2)} STX`
+            ) : '0.00 STX'}
+          </div>
+          <p className="text-xs text-gray-500 mt-1">
+            {isMember ? 'Total contributed' : 'Join to contribute'}
+          </p>
         </div>
       </div>
 
       {/* Main Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Join Pool */}
+        {/* Member Status / Join Pool */}
         {selectedPool && (
-          <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-8 border border-green-200">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Join {selectedPool.name}</h2>
-            <p className="text-gray-700 mb-6">
-              Become a member and start contributing to the community pool. There's no minimum requirement - 
-              contribute what you can afford each week!
-            </p>
-            
-            <div className="space-y-3 mb-6">
-              <div className="flex items-center space-x-2">
-                <CheckCircle className="text-green-600" size={20} />
-                <span className="text-gray-700">No minimum deposit</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <CheckCircle className="text-green-600" size={20} />
-                <span className="text-gray-700">Weekly contributions</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <CheckCircle className="text-green-600" size={20} />
-                <span className="text-gray-700">Monthly distributions</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <CheckCircle className="text-green-600" size={20} />
-                <span className="text-gray-700">Proportional rewards</span>
-              </div>
-            </div>
+          <div className={`rounded-xl p-8 border ${
+            isMember 
+              ? 'bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200' 
+              : 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-200'
+          }`}>
+            {isMember ? (
+              // Member Status
+              <>
+                <div className="flex items-center space-x-3 mb-4">
+                  <UserCheck className="text-blue-600" size={28} />
+                  <h2 className="text-2xl font-bold text-gray-900">Pool Member</h2>
+                </div>
+                <p className="text-gray-700 mb-6">
+                  You're an active member of {selectedPool.name}! You can now participate in governance and create proposals for the community.
+                </p>
+                
+                <div className="space-y-3 mb-6">
+                  <div className="flex items-center space-x-2">
+                    <CheckCircle className="text-blue-600" size={20} />
+                    <span className="text-gray-700">Active member status</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <CheckCircle className="text-blue-600" size={20} />
+                    <span className="text-gray-700">Can create proposals</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <CheckCircle className="text-blue-600" size={20} />
+                    <span className="text-gray-700">Voting privileges</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <CheckCircle className="text-blue-600" size={20} />
+                    <span className="text-gray-700">Monthly distributions</span>
+                  </div>
+                </div>
 
-            <button
-              onClick={handleJoinPool}
-              disabled={isJoining || !userData.isSignedIn}
-              className="w-full bg-green-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
-            >
-              <span>{isJoining ? 'Joining...' : 'Join Pool'}</span>
-              <ArrowRight size={20} />
-            </button>
+                <button
+                  onClick={() => navigate('/governance')}
+                  className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2"
+                >
+                  <Vote size={20} />
+                  <span>Create Proposal</span>
+                </button>
+              </>
+            ) : (
+              // Join Pool
+              <>
+                <h2 className="text-2xl font-bold text-gray-900 mb-4">Join {selectedPool.name}</h2>
+                <p className="text-gray-700 mb-6">
+                  Become a member and start contributing to the community pool. There's no minimum requirement - 
+                  contribute what you can afford each week!
+                </p>
+                
+                <div className="space-y-3 mb-6">
+                  <div className="flex items-center space-x-2">
+                    <CheckCircle className="text-green-600" size={20} />
+                    <span className="text-gray-700">No minimum deposit</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <CheckCircle className="text-green-600" size={20} />
+                    <span className="text-gray-700">Weekly contributions</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <CheckCircle className="text-green-600" size={20} />
+                    <span className="text-gray-700">Monthly distributions</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <CheckCircle className="text-green-600" size={20} />
+                    <span className="text-gray-700">Proportional rewards</span>
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleJoinPool}
+                  disabled={isJoining || !userData.isSignedIn}
+                  className="w-full bg-green-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                >
+                  <span>{isJoining ? 'Joining...' : 'Join Pool'}</span>
+                  <ArrowRight size={20} />
+                </button>
+              </>
+            )}
           </div>
         )}
 
@@ -224,8 +295,10 @@ const CommunityPool: React.FC = () => {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Make a Contribution</h2>
           <p className="text-gray-700 mb-6">
-            Contribute STX to this week's pool. All contributions are pooled together and 
-            distributed proportionally at the end of the month.
+            {isMember 
+              ? 'Continue contributing to this week\'s pool. Your contributions help grow the community fund.' 
+              : 'Contribute STX to this week\'s pool. All contributions are pooled together and distributed proportionally at the end of the month.'
+            }
           </p>
 
           {selectedPool && (
@@ -244,7 +317,7 @@ const CommunityPool: React.FC = () => {
                 disabled={isContributing || !userData.isSignedIn}
                 className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isContributing ? 'Contributing...' : 'Contribute to Pool'}
+                {isContributing ? 'Contributing...' : (isMember ? 'Contribute Again' : 'Contribute to Pool')}
               </button>
             </>
           )}

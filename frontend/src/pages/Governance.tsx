@@ -7,18 +7,23 @@ import {
   XCircle, 
   Users,
   Calendar,
-  ArrowRight
+  UserPlus
 } from 'lucide-react';
-import { useDAO, useProposal, useGovernanceToken } from '@/hooks/useContract';
+import { useNavigate } from 'react-router-dom';
+import { useDAO, useProposal, useContractCall, useSavingsSTX } from '@/hooks/useContract';
+import { useCommunityPoolMembership } from '@/hooks/useCommunityPoolMembership';
 import { useStacks } from '@/hooks/useStacks';
-import { formatWASHA } from '@/utils/stacks';
+import { formatSTX, extractClarityValue } from '@/utils/stacks';
+import CreateProposalModal from '@/components/CreateProposalModal';
+import toast from 'react-hot-toast';
 
 interface ProposalCardProps {
   proposalId: number;
   onVote: (proposalId: number, support: number) => void;
+  isVoting?: boolean;
 }
 
-const ProposalCard: React.FC<ProposalCardProps> = ({ proposalId, onVote }) => {
+const ProposalCard: React.FC<ProposalCardProps> = ({ proposalId, onVote, isVoting = false }) => {
   const { proposal, state, isLoading } = useProposal(proposalId);
   const [selectedVote, setSelectedVote] = useState<number | null>(null);
 
@@ -58,8 +63,8 @@ const ProposalCard: React.FC<ProposalCardProps> = ({ proposalId, onVote }) => {
 
   if (!proposal || !state) return null;
 
-  const proposalData = proposal.value;
-  const stateValue = parseInt(state.value);
+  const proposalData = (proposal as any)?.value || {};
+  const stateValue = parseInt(extractClarityValue(state) || '0');
   const isActive = stateValue === 1; // Active state
 
   return (
@@ -84,19 +89,19 @@ const ProposalCard: React.FC<ProposalCardProps> = ({ proposalId, onVote }) => {
       <div className="grid grid-cols-3 gap-4 mb-6">
         <div className="text-center">
           <div className="text-2xl font-bold text-success-600">
-            {formatWASHA(parseInt(proposalData['for-votes']))}
+            {formatSTX(parseInt(proposalData?.['for-votes'] || '0'))}
           </div>
           <div className="text-sm text-gray-600">For</div>
         </div>
         <div className="text-center">
           <div className="text-2xl font-bold text-error-600">
-            {formatWASHA(parseInt(proposalData['against-votes']))}
+            {formatSTX(parseInt(proposalData?.['against-votes'] || '0'))}
           </div>
           <div className="text-sm text-gray-600">Against</div>
         </div>
         <div className="text-center">
           <div className="text-2xl font-bold text-gray-600">
-            {formatWASHA(parseInt(proposalData['abstain-votes'] || '0'))}
+            {formatSTX(parseInt(proposalData?.['abstain-votes'] || '0'))}
           </div>
           <div className="text-sm text-gray-600">Abstain</div>
         </div>
@@ -142,9 +147,10 @@ const ProposalCard: React.FC<ProposalCardProps> = ({ proposalId, onVote }) => {
           {selectedVote !== null && (
             <button
               onClick={() => onVote(proposalId, selectedVote)}
-              className="w-full mt-3 bg-primary-600 text-white py-2 px-4 rounded-lg hover:bg-primary-700 transition-colors font-medium"
+              disabled={isVoting}
+              className="w-full mt-3 bg-primary-600 text-white py-2 px-4 rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
             >
-              Cast Vote
+              {isVoting ? 'Casting Vote...' : 'Cast Vote'}
             </button>
           )}
         </div>
@@ -154,25 +160,42 @@ const ProposalCard: React.FC<ProposalCardProps> = ({ proposalId, onVote }) => {
 };
 
 const Governance: React.FC = () => {
+  const navigate = useNavigate();
   const { userData } = useStacks();
-  const { proposalCount, votingDelay, votingPeriod, proposalThreshold, quorumVotes } = useDAO();
-  const { balance, currentVotes } = useGovernanceToken();
+  const { proposalCount, votingPeriod } = useDAO();
+  const { userSTXBalance, userShares } = useSavingsSTX();
+  const { isMember: isCommunityPoolMember, memberPools, loading: membershipLoading } = useCommunityPoolMembership();
   const [showCreateProposal, setShowCreateProposal] = useState(false);
+
+  const { mutate: castVote, isLoading: isVoting } = useContractCall();
 
   const handleVote = async (proposalId: number, support: number) => {
     try {
-      // This would call the contract
-      console.log(`Voting ${support} on proposal ${proposalId}`);
-      // await castVote(proposalId, support);
+      await castVote({
+        contractName: 'washika-dao',
+        functionName: 'cast-vote',
+        functionArgs: [
+          { type: 'uint', value: proposalId.toString() },
+          { type: 'uint', value: support.toString() }
+        ]
+      });
+      
+      toast.success('Vote cast successfully!');
     } catch (error) {
       console.error('Voting failed:', error);
+      toast.error('Failed to cast vote. Please try again.');
     }
   };
 
-  const canCreateProposal = userData.isSignedIn && 
-    currentVotes && 
-    proposalThreshold && 
-    parseInt(currentVotes.value) >= parseInt(proposalThreshold.value);
+  const handleProposalCreated = () => {
+    // Refresh proposal data after creation
+    window.location.reload();
+  };
+
+  // Check if user is a pool member (either savings pool or community pool)
+  const isSavingsPoolMember = userData.isSignedIn && userShares && parseInt(extractClarityValue(userShares) || '0') > 0;
+  const isPoolMember = isSavingsPoolMember || isCommunityPoolMember;
+  const canCreateProposal = isPoolMember;
 
   return (
     <div className="space-y-8">
@@ -203,17 +226,17 @@ const Governance: React.FC = () => {
             <Vote className="text-primary-600" size={24} />
           </div>
           <p className="text-2xl font-bold text-gray-900">
-            {proposalCount ? proposalCount.value : '0'}
+            {proposalCount ? extractClarityValue(proposalCount) : '0'}
           </p>
         </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-medium text-gray-600">Your Voting Power</h3>
+            <h3 className="text-sm font-medium text-gray-600">Your STX Balance</h3>
             <Users className="text-primary-600" size={24} />
           </div>
           <p className="text-2xl font-bold text-gray-900">
-            {currentVotes ? formatWASHA(parseInt(currentVotes.value)) : '0'}
+            {userSTXBalance ? formatSTX(parseInt(extractClarityValue(userSTXBalance) || '0')) : '0'} STX
           </p>
         </div>
 
@@ -223,17 +246,21 @@ const Governance: React.FC = () => {
             <Clock className="text-primary-600" size={24} />
           </div>
           <p className="text-2xl font-bold text-gray-900">
-            {votingPeriod ? `${votingPeriod.value} blocks` : '0 blocks'}
+            {votingPeriod ? `${extractClarityValue(votingPeriod)} blocks` : '0 blocks'}
           </p>
         </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-medium text-gray-600">Quorum Required</h3>
+            <h3 className="text-sm font-medium text-gray-600">Pool Membership</h3>
             <Calendar className="text-primary-600" size={24} />
           </div>
           <p className="text-2xl font-bold text-gray-900">
-            {quorumVotes ? formatWASHA(parseInt(quorumVotes.value)) : '0'}
+            {membershipLoading ? 'Checking...' : (isPoolMember ? 'Active Member' : 'Not a Member')}
+          </p>
+          <p className="text-sm text-gray-600 mt-1">
+            {isSavingsPoolMember && userShares ? `${formatSTX(parseInt(extractClarityValue(userShares) || '0'))} savings shares` : 
+             isCommunityPoolMember ? `Member of ${memberPools.length} community pool${memberPools.length !== 1 ? 's' : ''}` : '0 shares'}
           </p>
         </div>
       </div>
@@ -242,13 +269,14 @@ const Governance: React.FC = () => {
       <div className="space-y-6">
         <h2 className="text-xl font-semibold text-gray-900">Active Proposals</h2>
         
-        {proposalCount && parseInt(proposalCount.value) > 0 ? (
+        {proposalCount && parseInt(extractClarityValue(proposalCount) || '0') > 0 ? (
           <div className="space-y-4">
-            {Array.from({ length: Math.min(parseInt(proposalCount.value), 10) }, (_, i) => (
+            {Array.from({ length: Math.min(parseInt(extractClarityValue(proposalCount) || '0'), 10) }, (_, i) => (
               <ProposalCard
                 key={i + 1}
                 proposalId={i + 1}
                 onVote={handleVote}
+                isVoting={isVoting}
               />
             ))}
           </div>
@@ -257,9 +285,12 @@ const Governance: React.FC = () => {
             <Vote size={48} className="text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">No Proposals Yet</h3>
             <p className="text-gray-600 mb-6">
-              Be the first to create a proposal and shape the future of WashikaDAO
+              {isPoolMember 
+                ? 'Be the first to create a proposal and shape the future of your pool' 
+                : 'Join a pool to participate in governance and create proposals'
+              }
             </p>
-            {userData.isSignedIn && (
+            {isPoolMember ? (
               <button
                 onClick={() => setShowCreateProposal(true)}
                 className="inline-flex items-center space-x-2 bg-primary-600 text-white px-6 py-3 rounded-lg hover:bg-primary-700 transition-colors"
@@ -267,6 +298,27 @@ const Governance: React.FC = () => {
                 <Plus size={20} />
                 <span>Create First Proposal</span>
               </button>
+            ) : (
+              <div className="text-center">
+                <p className="text-sm text-gray-500 mb-4">You need to be a pool member to create proposals</p>
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                  <button
+                    onClick={() => navigate('/pools')}
+                    className="inline-flex items-center space-x-2 bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors"
+                  >
+                    <Users size={20} />
+                    <span>Join a Pool</span>
+                  </button>
+                  <button
+                    onClick={() => navigate('/pools?action=create')}
+                    className="inline-flex items-center space-x-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    <UserPlus size={20} />
+                    <span>Create Pool</span>
+                  </button>
+                </div>
+                <p className="text-xs text-gray-400 mt-2">Join an existing pool or create your own community pool</p>
+              </div>
             )}
           </div>
         )}
@@ -283,7 +335,7 @@ const Governance: React.FC = () => {
             <div>
               <h4 className="font-medium text-gray-900">Create Proposal</h4>
               <p className="text-sm text-gray-600 mt-1">
-                Hold {proposalThreshold ? formatWASHA(parseInt(proposalThreshold.value)) : '100'} WASHA to create proposals
+                Be a pool member to create proposals
               </p>
             </div>
           </div>
@@ -294,7 +346,7 @@ const Governance: React.FC = () => {
             <div>
               <h4 className="font-medium text-gray-900">Community Vote</h4>
               <p className="text-sm text-gray-600 mt-1">
-                Token holders vote during the {votingPeriod ? votingPeriod.value : '17280'} block voting period
+                Pool members vote using their STX balance during the {votingPeriod ? extractClarityValue(votingPeriod) : '17280'} block voting period
               </p>
             </div>
           </div>
@@ -311,6 +363,13 @@ const Governance: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Create Proposal Modal */}
+      <CreateProposalModal
+        isOpen={showCreateProposal}
+        onClose={() => setShowCreateProposal(false)}
+        onSuccess={handleProposalCreated}
+      />
     </div>
   );
 };
