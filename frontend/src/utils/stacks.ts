@@ -39,7 +39,7 @@ export const CONTRACTS = {
   SIMPLE_GOVERNANCE: 'simple-governance',
   WASHIKA_DAO: 'washika-dao',
   TREASURY: 'treasury',
-  SAVINGS_STX: 'savings-stx',
+  SAVINGS_STX: 'savings-stx-v4',
   SAVINGS_SBTC: 'savings-sbtc',
   LENDING_CORE: 'lending-core',
   ORACLE_AGGREGATOR: 'oracle-aggregator',
@@ -401,16 +401,19 @@ export const extractClarityValue = (clarityValue: any): any => {
 };
 
 // Utility functions for formatting
-export const formatSTX = (amount: number): string => {
-  return (amount / 1_000_000).toFixed(6);
+export const formatSTX = (amount: number | bigint): string => {
+  const numAmount = typeof amount === 'bigint' ? Number(amount) : amount;
+  return (numAmount / 1_000_000).toFixed(6);
 };
 
-export const formatWASHA = (amount: number): string => {
-  return (amount / 1_000_000).toFixed(6);
+export const formatWASHA = (amount: number | bigint): string => {
+  const numAmount = typeof amount === 'bigint' ? Number(amount) : amount;
+  return (numAmount / 1_000_000).toFixed(6);
 };
 
-export const formatBTC = (amount: number): string => {
-  return (amount / 100_000_000).toFixed(8);
+export const formatBTC = (amount: number | bigint): string => {
+  const numAmount = typeof amount === 'bigint' ? Number(amount) : amount;
+  return (numAmount / 100_000_000).toFixed(8);
 };
 
 export const parseSTX = (amount: string): number => {

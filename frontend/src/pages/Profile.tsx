@@ -2,11 +2,14 @@ import React, { useState } from 'react';
 import { User, Mail, MapPin, Edit2, Save, X } from 'lucide-react';
 import { useStacks } from '../hooks/useStacks';
 import { useCommunityPool } from '../hooks/useCommunityPool';
+import { useSavingsSTX } from '../hooks/useContract';
+import { formatSTX, extractClarityValue } from '../utils/stacks';
 import toast from 'react-hot-toast';
 
 const Profile: React.FC = () => {
   const { userData } = useStacks();
   const poolData = useCommunityPool(userData.address || undefined);
+  const savingsData = useSavingsSTX(userData.address || undefined);
   
   const [isEditing, setIsEditing] = useState(false);
   const [profile, setProfile] = useState({
@@ -175,14 +178,26 @@ const Profile: React.FC = () => {
               <div>
                 <p className="text-sm text-gray-600 mb-1">Member Status</p>
                 <p className="text-lg font-bold text-gray-900">
-                  {poolData.loading ? '...' : poolData.isMember ? '✅ Active Member' : '❌ Not a Member'}
+                  {poolData.loading || savingsData.isLoading ? '...' : 
+                   (poolData.isMember || (savingsData.userShares && Number(extractClarityValue(savingsData.userShares) || 0) > 0)) ? 
+                   '✅ Active Member' : '❌ Not a Member'}
                 </p>
               </div>
 
               <div>
                 <p className="text-sm text-gray-600 mb-1">Total Contributions</p>
                 <p className="text-2xl font-bold text-green-600">
-                  {poolData.loading ? '...' : (poolData.yourTotalContributions / 1000000).toFixed(2)} STX
+                  {poolData.loading || savingsData.isLoading ? '...' : 
+                   ((poolData.yourTotalContributions / 1000000) + 
+                    (savingsData.userSTXBalance ? Number(extractClarityValue(savingsData.userSTXBalance) || 0) / 1000000 : 0)).toFixed(2)} STX
+                </p>
+              </div>
+
+              <div>
+                <p className="text-sm text-gray-600 mb-1">Savings Pool</p>
+                <p className="text-lg font-bold text-blue-600">
+                  {savingsData.isLoading ? '...' : 
+                   (savingsData.userSTXBalance ? formatSTX(Number(extractClarityValue(savingsData.userSTXBalance) || 0)) : '0.00')} STX
                 </p>
               </div>
 

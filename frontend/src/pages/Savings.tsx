@@ -9,18 +9,20 @@ import {
   Info,
   Zap
 } from 'lucide-react';
-import { useSavingsSTX } from '@/hooks/useContract';
+import { useSavingsSTX, useContractCall } from '@/hooks/useContract';
 import { useStacks } from '@/hooks/useStacks';
-import { formatSTX, formatBTC, parseSTX } from '@/utils/stacks';
+import { formatSTX, formatBTC, parseSTX, extractClarityValue } from '@/utils/stacks';
+import { uintCV, PostConditionMode } from '@stacks/transactions';
+import toast from 'react-hot-toast';
+import { useQueryClient } from 'react-query';
 
 interface DepositModalProps {
   isOpen: boolean;
   onClose: () => void;
   onDeposit: (amount: number) => void;
-  poolType: 'STX' | 'sBTC';
 }
 
-const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose, onDeposit, poolType }) => {
+const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose, onDeposit }) => {
   const [amount, setAmount] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -46,19 +48,19 @@ const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose, onDeposit,
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">
-          Deposit {poolType}
+          Deposit STX
         </h3>
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Amount ({poolType})
+              Amount (STX)
             </label>
             <input
               type="number"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              placeholder={`Enter ${poolType} amount`}
+              placeholder="Enter STX amount"
               className="input w-full"
               step="0.000001"
               min="0"
@@ -72,20 +74,9 @@ const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose, onDeposit,
               <div className="text-sm text-primary-800">
                 <p className="font-medium mb-1">Deposit Benefits:</p>
                 <ul className="space-y-1 text-xs">
-                  {poolType === 'STX' && (
-                    <>
-                      <li>• Earn BTC rewards through PoX stacking</li>
-                      <li>• Receive proportional pool shares</li>
-                      <li>• Participate in automated stacking cycles</li>
-                    </>
-                  )}
-                  {poolType === 'sBTC' && (
-                    <>
-                      <li>• Earn protocol rewards in WASHA tokens</li>
-                      <li>• Maintain Bitcoin exposure</li>
-                      <li>• Liquid staking alternative</li>
-                    </>
-                  )}
+                  <li>• Earn BTC rewards through PoX stacking</li>
+                  <li>• Receive proportional pool shares</li>
+                  <li>• Participate in automated stacking cycles</li>
                 </ul>
               </div>
             </div>
@@ -117,7 +108,6 @@ interface WithdrawModalProps {
   isOpen: boolean;
   onClose: () => void;
   onWithdraw: (shares: number) => void;
-  poolType: 'STX' | 'sBTC';
   userShares: number;
   userBalance: number;
 }
@@ -126,7 +116,6 @@ const WithdrawModal: React.FC<WithdrawModalProps> = ({
   isOpen, 
   onClose, 
   onWithdraw, 
-  poolType, 
   userShares, 
   userBalance 
 }) => {
@@ -159,14 +148,14 @@ const WithdrawModal: React.FC<WithdrawModalProps> = ({
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">
-          Withdraw {poolType}
+          Withdraw STX
         </h3>
         
         <div className="bg-gray-50 rounded-lg p-4 mb-4">
           <div className="text-sm text-gray-600">
             <div className="flex justify-between mb-2">
               <span>Your Balance:</span>
-              <span className="font-medium">{formatSTX(userBalance)} {poolType}</span>
+              <span className="font-medium">{formatSTX(userBalance)} STX</span>
             </div>
             <div className="flex justify-between">
               <span>Your Shares:</span>
@@ -193,7 +182,7 @@ const WithdrawModal: React.FC<WithdrawModalProps> = ({
             />
             {percentage && (
               <p className="text-sm text-gray-600 mt-1">
-                Estimated: {formatSTX(estimatedAmount)} {poolType}
+                Estimated: {formatSTX(estimatedAmount)} STX
               </p>
             )}
           </div>
@@ -235,27 +224,60 @@ const WithdrawModal: React.FC<WithdrawModalProps> = ({
 
 const Savings: React.FC = () => {
   const { userData } = useStacks();
-  const { poolInfo, userShares, userSTXBalance, userPendingBTC, exchangeRate } = useSavingsSTX();
+  const { poolInfo, userShares, userSTXBalance, userPendingBTC } = useSavingsSTX();
+  const queryClient = useQueryClient();
+  const contractCall = useContractCall();
   
   const [showDepositModal, setShowDepositModal] = useState(false);
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
-  const [selectedPool, setSelectedPool] = useState<'STX' | 'sBTC'>('STX');
 
   const handleDeposit = async (amount: number) => {
+    if (!userData.isSignedIn) {
+      toast.error('Please connect your wallet to deposit');
+      return;
+    }
+
     try {
-      console.log(`Depositing ${amount} ${selectedPool}`);
-      // await depositSTX(amount) or depositsBTC(amount)
+      await contractCall.mutateAsync({
+        contractName: 'savings-stx-v4',
+        functionName: 'deposit-stx',
+        functionArgs: [uintCV(amount)],
+        postConditions: [],
+        postConditionMode: PostConditionMode.Allow
+      });
+
+      toast.success('STX deposited successfully!');
+      // Refresh all savings-related data
+      queryClient.invalidateQueries(['savings-stx']);
+      queryClient.refetchQueries(['savings-stx']);
+      setShowDepositModal(false);
     } catch (error) {
       console.error('Deposit failed:', error);
+      toast.error('Failed to deposit STX. Please try again.');
     }
   };
 
   const handleWithdraw = async (shares: number) => {
+    if (!userData.isSignedIn) {
+      toast.error('Please connect your wallet to withdraw');
+      return;
+    }
+
     try {
-      console.log(`Withdrawing ${shares} shares from ${selectedPool}`);
-      // await withdrawSTX(shares) or withdrawsBTC(shares)
+      await contractCall.mutateAsync({
+        contractName: 'savings-stx-v4',
+        functionName: 'withdraw-stx',
+        functionArgs: [uintCV(shares)],
+        postConditions: [],
+        postConditionMode: PostConditionMode.Allow
+      });
+
+      toast.success('STX withdrawn successfully!');
+      queryClient.invalidateQueries(['savings-stx']);
+      setShowWithdrawModal(false);
     } catch (error) {
       console.error('Withdrawal failed:', error);
+      toast.error('Failed to withdraw STX. Please try again.');
     }
   };
 
@@ -268,25 +290,18 @@ const Savings: React.FC = () => {
     }
   };
 
-  const openDepositModal = (poolType: 'STX' | 'sBTC') => {
-    setSelectedPool(poolType);
+  const openDepositModal = () => {
     setShowDepositModal(true);
   };
 
-  const openWithdrawModal = (poolType: 'STX' | 'sBTC') => {
-    setSelectedPool(poolType);
+  const openWithdrawModal = () => {
     setShowWithdrawModal(true);
   };
 
-  // Calculate APY (mock calculation)
-  const calculateAPY = (poolType: 'STX' | 'sBTC') => {
-    if (poolType === 'STX') {
-      // Estimate based on PoX rewards (roughly 6-8% annually)
-      return '7.2%';
-    } else {
-      // sBTC pool rewards
-      return '4.5%';
-    }
+  // Calculate STX APY
+  const calculateSTXAPY = () => {
+    // Estimate based on PoX rewards (roughly 6-8% annually)
+    return '7.2%';
   };
 
   return (
@@ -295,7 +310,7 @@ const Savings: React.FC = () => {
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Savings</h1>
         <p className="text-gray-600 mt-2">
-          Deposit STX or sBTC to earn rewards through PoX stacking and protocol incentives
+          Deposit STX to earn BTC rewards through PoX stacking
         </p>
       </div>
 
@@ -306,25 +321,25 @@ const Savings: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
               <div className="text-2xl font-bold">
-                {userSTXBalance ? formatSTX(parseInt(userSTXBalance.value)) : '0'} STX
+                {userSTXBalance ? formatSTX(Number(extractClarityValue(userSTXBalance) || 0)) : '0'} STX
               </div>
               <div className="text-primary-200 text-sm">Total Deposited</div>
             </div>
             <div>
               <div className="text-2xl font-bold">
-                {userShares ? userShares.value : '0'}
+                {userShares ? String(extractClarityValue(userShares) || '0') : '0'}
               </div>
               <div className="text-primary-200 text-sm">Pool Shares</div>
             </div>
             <div>
               <div className="text-2xl font-bold">
-                {userPendingBTC ? formatBTC(parseInt(userPendingBTC.value)) : '0'} BTC
+                {userPendingBTC ? formatBTC(Number(extractClarityValue(userPendingBTC) || 0)) : '0'} BTC
               </div>
               <div className="text-primary-200 text-sm">Pending Rewards</div>
             </div>
           </div>
           
-          {userPendingBTC && parseInt(userPendingBTC.value) > 0 && (
+          {userPendingBTC && (extractClarityValue(userPendingBTC) || 0) > 0 && (
             <button
               onClick={handleClaimRewards}
               className="mt-4 bg-white text-primary-600 px-4 py-2 rounded-lg hover:bg-primary-50 transition-colors font-medium"
@@ -335,8 +350,8 @@ const Savings: React.FC = () => {
         </div>
       )}
 
-      {/* Savings Pools */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      {/* STX Savings Pool */}
+      <div className="max-w-4xl mx-auto">
         {/* STX Pool */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <div className="p-6">
@@ -351,7 +366,7 @@ const Savings: React.FC = () => {
                 </div>
               </div>
               <div className="text-right">
-                <div className="text-2xl font-bold text-success-600">{calculateAPY('STX')}</div>
+                <div className="text-2xl font-bold text-success-600">{calculateSTXAPY()}</div>
                 <div className="text-sm text-gray-600">Est. APY</div>
               </div>
             </div>
@@ -361,7 +376,7 @@ const Savings: React.FC = () => {
                 <div className="bg-gray-50 rounded-lg p-3">
                   <div className="text-sm text-gray-600">Total Deposited</div>
                   <div className="text-lg font-semibold">
-                    {poolInfo ? formatSTX(parseInt(poolInfo.value['total-stx'])) : '0'} STX
+                    {poolInfo ? formatSTX(Number(extractClarityValue(poolInfo)?.['total-stx'] || 0)) : '0'} STX
                   </div>
                 </div>
                 <div className="bg-gray-50 rounded-lg p-3">
@@ -369,7 +384,7 @@ const Savings: React.FC = () => {
                   <div className="flex items-center space-x-1">
                     <Zap size={16} className="text-success-600" />
                     <span className="text-sm font-medium text-success-600">
-                      {poolInfo && poolInfo.value['stacking-enabled'] ? 'Active' : 'Inactive'}
+                      {poolInfo && extractClarityValue(poolInfo)?.['stacking-enabled'] ? 'Active' : 'Inactive'}
                     </span>
                   </div>
                 </div>
@@ -391,7 +406,7 @@ const Savings: React.FC = () => {
 
               <div className="flex space-x-3">
                 <button
-                  onClick={() => openDepositModal('STX')}
+                  onClick={openDepositModal}
                   className="flex-1 btn btn-primary btn-md"
                   disabled={!userData.isSignedIn}
                 >
@@ -399,9 +414,9 @@ const Savings: React.FC = () => {
                   Deposit STX
                 </button>
                 <button
-                  onClick={() => openWithdrawModal('STX')}
+                  onClick={openWithdrawModal}
                   className="flex-1 btn btn-outline btn-md"
-                  disabled={!userData.isSignedIn || !userShares || parseInt(userShares.value) === 0}
+                  disabled={!userData.isSignedIn || !userShares || Number(extractClarityValue(userShares) || 0) === 0}
                 >
                   <ArrowDownLeft size={16} className="mr-2" />
                   Withdraw
@@ -411,72 +426,6 @@ const Savings: React.FC = () => {
           </div>
         </div>
 
-        {/* sBTC Pool */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
-                  <Bitcoin className="text-yellow-600" size={24} />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">sBTC Savings</h3>
-                  <p className="text-sm text-gray-600">Earn protocol rewards</p>
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="text-2xl font-bold text-success-600">{calculateAPY('sBTC')}</div>
-                <div className="text-sm text-gray-600">Est. APY</div>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-gray-50 rounded-lg p-3">
-                  <div className="text-sm text-gray-600">Total Deposited</div>
-                  <div className="text-lg font-semibold">0 sBTC</div>
-                </div>
-                <div className="bg-gray-50 rounded-lg p-3">
-                  <div className="text-sm text-gray-600">Reward Token</div>
-                  <div className="text-sm font-medium text-primary-600">WASHA</div>
-                </div>
-              </div>
-
-              <div className="bg-secondary-50 rounded-lg p-4">
-                <div className="flex items-start space-x-2">
-                  <TrendingUp size={16} className="text-secondary-600 mt-0.5" />
-                  <div className="text-sm text-secondary-800">
-                    <p className="font-medium">sBTC Pool Benefits:</p>
-                    <ul className="mt-1 space-y-1 text-xs">
-                      <li>• Maintain Bitcoin exposure</li>
-                      <li>• Earn WASHA governance tokens</li>
-                      <li>• Liquid Bitcoin alternative</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex space-x-3">
-                <button
-                  onClick={() => openDepositModal('sBTC')}
-                  className="flex-1 btn btn-primary btn-md"
-                  disabled={!userData.isSignedIn}
-                >
-                  <ArrowUpRight size={16} className="mr-2" />
-                  Deposit sBTC
-                </button>
-                <button
-                  onClick={() => openWithdrawModal('sBTC')}
-                  className="flex-1 btn btn-outline btn-md"
-                  disabled={!userData.isSignedIn}
-                >
-                  <ArrowDownLeft size={16} className="mr-2" />
-                  Withdraw
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* How It Works */}
@@ -487,9 +436,9 @@ const Savings: React.FC = () => {
             <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-3">
               <PiggyBank className="text-primary-600" size={24} />
             </div>
-            <h4 className="font-medium text-gray-900 mb-2">Deposit Assets</h4>
+            <h4 className="font-medium text-gray-900 mb-2">Deposit STX</h4>
             <p className="text-sm text-gray-600">
-              Deposit STX or sBTC into the respective savings pools to start earning rewards
+              Deposit STX into the savings pool to start earning BTC rewards through PoX stacking
             </p>
           </div>
           <div className="text-center">
@@ -505,9 +454,9 @@ const Savings: React.FC = () => {
             <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-3">
               <TrendingUp className="text-primary-600" size={24} />
             </div>
-            <h4 className="font-medium text-gray-900 mb-2">Earn Rewards</h4>
+            <h4 className="font-medium text-gray-900 mb-2">Earn BTC Rewards</h4>
             <p className="text-sm text-gray-600">
-              Claim your BTC rewards from STX stacking or WASHA tokens from sBTC deposits
+              Claim your BTC rewards earned from STX stacking every ~2 weeks
             </p>
           </div>
         </div>
@@ -518,16 +467,14 @@ const Savings: React.FC = () => {
         isOpen={showDepositModal}
         onClose={() => setShowDepositModal(false)}
         onDeposit={handleDeposit}
-        poolType={selectedPool}
       />
 
       <WithdrawModal
         isOpen={showWithdrawModal}
         onClose={() => setShowWithdrawModal(false)}
         onWithdraw={handleWithdraw}
-        poolType={selectedPool}
-        userShares={userShares ? parseInt(userShares.value) : 0}
-        userBalance={userSTXBalance ? parseInt(userSTXBalance.value) : 0}
+        userShares={userShares ? Number(extractClarityValue(userShares) || 0) : 0}
+        userBalance={userSTXBalance ? Number(extractClarityValue(userSTXBalance) || 0) : 0}
       />
     </div>
   );

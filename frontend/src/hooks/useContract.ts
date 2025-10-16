@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { callReadOnly, makeContractCall, waitForTransaction } from '@/utils/stacks';
+import { principalCV } from '@stacks/transactions';
 import { useStacks } from './useStacks';
 
 export const useReadOnlyContract = (
@@ -182,30 +183,30 @@ export const useSavingsSTX = (address?: string) => {
   const { userData } = useStacks();
   const userAddress = address || userData.address;
 
-  const poolInfo = useReadOnlyContract('savings-stx', 'get-pool-info');
+  const poolInfo = useReadOnlyContract('savings-stx-v4', 'get-pool-info');
   
   const userShares = useReadOnlyContract(
-    'savings-stx',
+    'savings-stx-v4',
     'get-user-shares',
-    userAddress ? [{ type: 'principal', value: userAddress }] : [],
+    userAddress ? [principalCV(userAddress)] : [],
     { enabled: !!userAddress }
   );
 
   const userSTXBalance = useReadOnlyContract(
-    'savings-stx',
+    'savings-stx-v4',
     'get-user-stx-balance',
-    userAddress ? [{ type: 'principal', value: userAddress }] : [],
+    userAddress ? [principalCV(userAddress)] : [],
     { enabled: !!userAddress }
   );
 
   const userPendingBTC = useReadOnlyContract(
-    'savings-stx',
+    'savings-stx-v4',
     'get-user-pending-btc',
-    userAddress ? [{ type: 'principal', value: userAddress }] : [],
+    userAddress ? [principalCV(userAddress)] : [],
     { enabled: !!userAddress }
   );
 
-  const exchangeRate = useReadOnlyContract('savings-stx', 'get-exchange-rate');
+  const exchangeRate = useReadOnlyContract('savings-stx-v4', 'get-exchange-rate');
 
   return {
     poolInfo: poolInfo.data,
