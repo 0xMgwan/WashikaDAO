@@ -376,7 +376,7 @@ const Savings: React.FC = () => {
                 <div className="bg-gray-50 rounded-lg p-3">
                   <div className="text-sm text-gray-600">Total Deposited</div>
                   <div className="text-lg font-semibold">
-                    {poolInfo ? formatSTX(Number(extractClarityValue(poolInfo)?.['total-stx'] || 0)) : '0'} STX
+                    {poolInfo && (poolInfo as any).data ? formatSTX(Number(extractClarityValue((poolInfo as any).data['total-stx']) || 0)) : '0'} STX
                   </div>
                 </div>
                 <div className="bg-gray-50 rounded-lg p-3">
@@ -384,7 +384,7 @@ const Savings: React.FC = () => {
                   <div className="flex items-center space-x-1">
                     <Zap size={16} className="text-success-600" />
                     <span className="text-sm font-medium text-success-600">
-                      {poolInfo && extractClarityValue(poolInfo)?.['stacking-enabled'] ? 'Active' : 'Inactive'}
+                      {poolInfo && (poolInfo as any).data && extractClarityValue((poolInfo as any).data['stacking-enabled']) ? 'Active' : 'Inactive'}
                     </span>
                   </div>
                 </div>

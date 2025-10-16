@@ -93,8 +93,18 @@ const Dashboard: React.FC = () => {
   
   // Use real pool data - mock the others for now
   const { proposalCount } = useDAO();
-  const { poolInfo, userShares } = useSavingsSTX();
+  const { poolInfo, userShares, userSTXBalance, isLoading: savingsLoading, error: savingsError } = useSavingsSTX();
   const { price: stxPrice } = useOracle('STX-USD');
+  
+  // Log the data for debugging
+  console.log('Dashboard data:', { 
+    poolInfo, 
+    userShares, 
+    savingsLoading, 
+    savingsError,
+    proposalCount,
+    stxPrice 
+  });
   
   // Calculate realistic metrics
   const calculateTVL = () => {
@@ -119,15 +129,83 @@ const Dashboard: React.FC = () => {
   };
 
   const getPoolBalance = () => {
-    return poolInfo ? Number(extractClarityValue(poolInfo)?.['total-stx'] || 0) / 1000000 : 0;
+    if (!poolInfo) {
+      console.log('No poolInfo available');
+      return 0;
+    }
+    
+    console.log('Pool info:', poolInfo);
+    const extracted = extractClarityValue(poolInfo);
+    console.log('Extracted pool info:', extracted);
+    console.log('Available keys in extracted data:', Object.keys(extracted || {}));
+    
+    // Try different possible property names
+    const totalStx = extracted?.['total-stx'] || 
+                     extracted?.['totalStx'] || 
+                     extracted?.['total_stx'] || 
+                     extracted?.stx || 
+                     extracted?.['pool-balance'] ||
+                     extracted?.['balance'] ||
+                     0;
+    
+    console.log('Total STX found:', totalStx);
+    
+    // If pool shows 0 but user has deposits, calculate from user data
+    if (totalStx === 0 && userShares) {
+      const userSharesValue = Number(extractClarityValue(userShares) || 0);
+      if (userSharesValue > 0) {
+        console.log('Pool shows 0 but user has shares, using user shares as pool estimate');
+        // If user has shares, assume there's at least that much in the pool
+        return userSharesValue / 1000000;
+      }
+    }
+    
+    return Number(totalStx) / 1000000;
   };
 
   const getUserDeposits = () => {
-    if (!userData.isSignedIn || !userShares || !poolInfo) return 0;
+    if (!userData.isSignedIn) {
+      console.log('User not signed in');
+      return 0;
+    }
     
-    const shares = Number(extractClarityValue(userShares) || 0);
-    const totalShares = Number(extractClarityValue(poolInfo)?.['total-shares'] || 0);
-    const totalSTX = Number(extractClarityValue(poolInfo)?.['total-stx'] || 0);
+    // Use userSTXBalance like the Savings page does for consistency
+    if (userSTXBalance) {
+      const balance = Number(extractClarityValue(userSTXBalance) || 0);
+      console.log('User STX Balance:', balance);
+      return balance / 1000000; // Convert microSTX to STX
+    }
+    
+    // Fallback to shares calculation if userSTXBalance not available
+    if (!userShares || !poolInfo) {
+      console.log('Missing userShares or poolInfo:', { userShares, poolInfo });
+      return 0;
+    }
+    
+    const extractedShares = extractClarityValue(userShares);
+    const extractedPool = extractClarityValue(poolInfo);
+    
+    console.log('Extracted user shares:', extractedShares);
+    console.log('Extracted pool info for user calc:', extractedPool);
+    
+    const shares = Number(extractedShares || 0);
+    
+    // Try different property names for pool data
+    const totalShares = Number(extractedPool?.['total-shares'] || 
+                              extractedPool?.['totalShares'] || 
+                              extractedPool?.['total_shares'] || 0);
+    
+    const totalSTX = Number(extractedPool?.['total-stx'] || 
+                           extractedPool?.['totalStx'] || 
+                           extractedPool?.['total_stx'] || 0);
+    
+    console.log('User deposit calculation:', { shares, totalShares, totalSTX });
+    
+    // If user has shares but pool shows 0, show the shares as STX equivalent
+    if (shares > 0 && totalShares === 0) {
+      console.log('User has shares but pool shows 0 total shares - showing user shares as STX');
+      return shares / 1000000; // Convert microSTX to STX
+    }
     
     if (totalShares === 0) return 0;
     
@@ -261,7 +339,12 @@ const Dashboard: React.FC = () => {
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-white/60 backdrop-blur-sm rounded-xl p-4">
               <div className="text-sm text-gray-600 mb-1">Pool Balance</div>
-              {poolInfo ? (
+              {savingsError ? (
+                <>
+                  <div className="text-2xl font-bold text-red-500">Error</div>
+                  <div className="text-xs text-red-400 mt-1">Failed to fetch</div>
+                </>
+              ) : poolInfo ? (
                 <>
                   <div className="text-2xl font-bold text-blue-600">
                     {getPoolBalance().toFixed(6)} STX

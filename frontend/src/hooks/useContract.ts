@@ -113,12 +113,12 @@ export const useSimpleGovernance = () => {
 };
 
 export const useDAO = () => {
-  const proposalCount = useReadOnlyContract('washika-dao', 'get-proposal-count');
+  const proposalCount = useReadOnlyContract('simple-governance', 'get-proposal-count');
   
-  const votingDelay = useReadOnlyContract('washika-dao', 'get-voting-delay');
-  const votingPeriod = useReadOnlyContract('washika-dao', 'get-voting-period');
-  const proposalThreshold = useReadOnlyContract('washika-dao', 'get-proposal-threshold');
-  const quorumVotes = useReadOnlyContract('washika-dao', 'get-quorum-votes');
+  const votingDelay = useReadOnlyContract('simple-governance', 'get-voting-delay');
+  const votingPeriod = useReadOnlyContract('simple-governance', 'get-voting-period');
+  const proposalThreshold = useReadOnlyContract('simple-governance', 'get-proposal-threshold');
+  const quorumVotes = useReadOnlyContract('simple-governance', 'get-quorum-votes');
 
   return {
     proposalCount: proposalCount.data,

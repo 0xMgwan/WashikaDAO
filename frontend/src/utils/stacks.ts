@@ -35,13 +35,14 @@ export const network: StacksNetwork = new StacksTestnet();
 //   : new StacksTestnet();
 
 // Contract addresses (update these with actual deployed addresses)
-export const CONTRACT_ADDRESS = 'STKV0VGBVWGZMGRCQR3SY6R11FED3FW4WRYMWF28';
+export const CONTRACT_ADDRESS = 'STKV0VGBVWGZMGRCQR3SY6R11FED3FW4WRYMWF28'; // Both contracts are at this address
+export const GOVERNANCE_CONTRACT_ADDRESS = 'STKV0VGBVWGZMGRCQR3SY6R11FED3FW4WRYMWF28'; // Governance contract address
 
 export const CONTRACTS = {
   SIMPLE_GOVERNANCE: 'simple-governance',
   WASHIKA_DAO: 'washika-dao',
   TREASURY: 'treasury',
-  SAVINGS_STX: 'savings-stx-v4',
+  SAVINGS_STX: 'savings-stx-v4', // Updated to match deployed contract name
   SAVINGS_SBTC: 'savings-sbtc',
   LENDING_CORE: 'lending-core',
   ORACLE_AGGREGATOR: 'oracle-aggregator',
@@ -74,6 +75,18 @@ export const getUserAddress = (): string | null => {
   return null;
 };
 
+// Get the correct contract address based on contract name
+const getContractAddress = (contractName: string): string => {
+  switch (contractName) {
+    case 'simple-governance':
+      return GOVERNANCE_CONTRACT_ADDRESS;
+    case 'savings-stx-v4':
+      return CONTRACT_ADDRESS;
+    default:
+      return CONTRACT_ADDRESS; // Default to contract address
+  }
+};
+
 // Read-only contract calls
 export const callReadOnly = async (
   contractName: string,
@@ -82,17 +95,22 @@ export const callReadOnly = async (
   senderAddress?: string
 ) => {
   try {
+    const contractAddress = getContractAddress(contractName);
+    console.log(`Calling ${contractAddress}.${contractName}::${functionName}`, functionArgs);
+    
     const result = await callReadOnlyFunction({
-      contractAddress: CONTRACT_ADDRESS,
+      contractAddress,
       contractName,
       functionName,
       functionArgs,
-      senderAddress: senderAddress || getUserAddress() || CONTRACT_ADDRESS,
+      senderAddress: senderAddress || getUserAddress() || contractAddress,
       network,
     });
+    
+    console.log(`Result from ${contractName}::${functionName}:`, result);
     return result;
   } catch (error) {
-    console.error('Read-only call failed:', error);
+    console.error(`Read-only call failed for ${contractName}::${functionName}:`, error);
     throw error;
   }
 };
@@ -357,12 +375,42 @@ export const getPrice = async (pair: string) => {
 export const extractClarityValue = (clarityValue: any): any => {
   if (!clarityValue) return null;
   
-  // Handle different Clarity types
-  if (clarityValue.type) {
+  // Handle different Clarity types (both string and numeric types)
+  if (clarityValue.type !== undefined) {
+    // Handle numeric Clarity types
+    if (typeof clarityValue.type === 'number') {
+      switch (clarityValue.type) {
+        case 1: // uint
+        case 0: // int
+          return typeof clarityValue.value === 'bigint' ? Number(clarityValue.value) : clarityValue.value;
+        case 3: // bool
+          return clarityValue.value;
+        case 2: // buffer
+        case 13: // string-ascii
+        case 14: // string-utf8
+          return clarityValue.value;
+        case 12: // tuple - this is what we're seeing in the logs!
+          const tupleData: any = {};
+          if (clarityValue.value) {
+            Object.keys(clarityValue.value).forEach(key => {
+              tupleData[key] = extractClarityValue(clarityValue.value[key]);
+            });
+          }
+          return tupleData;
+        case 10: // optional
+          if (clarityValue.value === null) return null;
+          return extractClarityValue(clarityValue.value);
+        case 11: // list
+          return clarityValue.value?.map((item: any) => extractClarityValue(item)) || [];
+        default:
+          return clarityValue.value;
+      }
+    }
+    
+    // Handle string Clarity types (fallback)
     switch (clarityValue.type) {
       case 'uint':
       case 'int':
-        // Convert BigInt to number for easier handling in UI
         return typeof clarityValue.value === 'bigint' ? Number(clarityValue.value) : clarityValue.value;
       case 'bool':
         return clarityValue.value;
@@ -370,7 +418,6 @@ export const extractClarityValue = (clarityValue: any): any => {
       case 'string-utf8':
         return clarityValue.value;
       case 'tuple':
-        // Extract tuple data - this is likely what proposals are
         const tupleData: any = {};
         if (clarityValue.value) {
           Object.keys(clarityValue.value).forEach(key => {
@@ -379,7 +426,6 @@ export const extractClarityValue = (clarityValue: any): any => {
         }
         return tupleData;
       case 'optional':
-        // Handle optional values - proposals might be wrapped in optional
         if (clarityValue.value === null) return null;
         return extractClarityValue(clarityValue.value);
       case 'list':
