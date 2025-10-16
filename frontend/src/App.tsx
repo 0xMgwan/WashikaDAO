@@ -23,7 +23,6 @@ const Landing = React.lazy(() => import('./pages/Landing'));
 const PoolSelection = React.lazy(() => import('./pages/PoolSelection'));
 const Governance = React.lazy(() => import('./pages/Governance'));
 const Savings = React.lazy(() => import('./pages/Savings'));
-const Analytics = React.lazy(() => import('./pages/Analytics'));
 const CommunityPool = React.lazy(() => import('./pages/CommunityPool'));
 const Profile = React.lazy(() => import('./pages/Profile'));
 
@@ -73,7 +72,6 @@ function App() {
               <Route path="/profile" element={<Profile />} />
               <Route path="/governance" element={<Governance />} />
               <Route path="/savings" element={<Savings />} />
-              <Route path="/analytics" element={<Analytics />} />
             </Routes>
           </React.Suspense>
         </Layout>

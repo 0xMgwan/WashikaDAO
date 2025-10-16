@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+// Unused hook - can be removed or implemented later
 import { useReadOnlyContract, useContractCall } from './useContract';
 import { useStacks } from './useStacks';
 

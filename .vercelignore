@@ -1,0 +1,58 @@
+# Dependencies
+node_modules
+frontend/node_modules
+
+# Build outputs
+frontend/dist
+.cache
+
+# Environment files
+.env
+.env.local
+.env.production
+.env.deploy
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage
+
+# IDE files
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Clarity/Clarinet files
+.cache
+settings
+deployments
+costs-reports.json
+
+# Contract deployment files (keep these out of production)
+deploy-*.js
+*-deployment.json
+
+# Test files
+tests
+*.test.ts
+*.test.js

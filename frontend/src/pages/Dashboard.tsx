@@ -8,13 +8,11 @@ import {
   Heart,
   Globe,
   Shield,
-  Zap,
   Star,
   ArrowRight,
-  CheckCircle,
-  CreditCard
+  CheckCircle
 } from 'lucide-react';
-import { useDAO, useSavingsSTX, useLendingCore, useOracle } from '../hooks/useContract';
+import { useDAO, useSavingsSTX, useOracle } from '../hooks/useContract';
 import { useStacks } from '../hooks/useStacks';
 import { formatSTX, extractClarityValue } from '../utils/stacks';
 
@@ -83,23 +81,15 @@ const Dashboard: React.FC = () => {
   // Use real pool data - mock the others for now
   const { proposalCount } = useDAO();
   const { poolInfo } = useSavingsSTX();
-  const { totalSupply } = useLendingCore();
   const { price: stxPrice } = useOracle('STX-USD');
   
-  // Set defaults to prevent infinite loading
-  const safeProposalCount = proposalCount || 0;
-  const safePoolInfo = poolInfo || null;
-  const safeTotalSupply = totalSupply || null;
-
   // Calculate TVL (Total Value Locked)
   const calculateTVL = () => {
-    const savingsSTX = poolInfo ? parseInt(extractClarityValue(poolInfo)) : 0;
-    const lendingSTX = totalSupply ? parseInt(extractClarityValue(totalSupply)) : 0;
-    const totalSTXAmount = savingsSTX + lendingSTX;
+    const savingsSTX = poolInfo ? Number(extractClarityValue(poolInfo)?.['total-stx'] || 0) : 0;
     
     if (stxPrice) {
-      const stxPriceUSD = parseInt(extractClarityValue(stxPrice)) / 100000000;
-      return (totalSTXAmount * stxPriceUSD / 1000000).toFixed(0);
+      const stxPriceUSD = Number(extractClarityValue(stxPrice) || 0) / 100000000;
+      return (savingsSTX * stxPriceUSD / 1000000).toFixed(0);
     }
     return '2400'; // Mock value for demo
   };
@@ -200,7 +190,7 @@ const Dashboard: React.FC = () => {
         
         <StatCard
           title="Active Proposals"
-          value={proposalCount || '0'}
+          value={proposalCount ? String(extractClarityValue(proposalCount) || 0) : '0'}
           change="+2 this week"
           changeType="positive"
           icon={<Vote size={24} />}
@@ -209,7 +199,7 @@ const Dashboard: React.FC = () => {
         
         <StatCard
           title="Community Pool"
-          value={poolInfo ? `${formatSTX(parseInt(extractClarityValue(poolInfo)))} STX` : '0 STX'}
+          value={poolInfo ? `${formatSTX(Number(extractClarityValue(poolInfo)?.['total-stx'] || 0))} STX` : '0 STX'}
           change="Live on Testnet"
           changeType="positive"
           icon={<PiggyBank size={24} />}
@@ -297,38 +287,38 @@ const Dashboard: React.FC = () => {
           </button>
         </div>
 
-        {/* Access to Credit */}
-        <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-6 border border-purple-200">
+        {/* Analytics */}
+        <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl p-6 border border-purple-200">
           <div className="flex items-center space-x-3 mb-4">
             <div className="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center">
-              <CreditCard className="text-white" size={24} />
+              <TrendingUp className="text-white" size={24} />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">Fair Lending</h3>
-              <p className="text-purple-700 text-sm">Credit without discrimination</p>
+              <h3 className="text-lg font-semibold text-gray-900">Analytics</h3>
+              <p className="text-purple-700 text-sm">Track community growth</p>
             </div>
           </div>
           
           <div className="space-y-3 mb-6">
             <div className="flex items-center space-x-2">
-              <Zap className="text-purple-500" size={16} />
-              <span className="text-sm text-gray-700">Collateral-based lending</span>
+              <Star className="text-yellow-500" size={16} />
+              <span className="text-sm text-gray-700">Real-time pool metrics</span>
             </div>
             <div className="flex items-center space-x-2">
-              <Zap className="text-purple-500" size={16} />
-              <span className="text-sm text-gray-700">Competitive interest rates</span>
+              <Star className="text-yellow-500" size={16} />
+              <span className="text-sm text-gray-700">Governance participation</span>
             </div>
             <div className="flex items-center space-x-2">
-              <Zap className="text-purple-500" size={16} />
-              <span className="text-sm text-gray-700">No credit checks required</span>
+              <Star className="text-yellow-500" size={16} />
+              <span className="text-sm text-gray-700">Community impact data</span>
             </div>
           </div>
           
-          <button 
-            onClick={() => window.location.href = '/lending'}
+          <button
+            onClick={() => window.location.href = '/analytics'}
             className="w-full bg-purple-600 text-white py-3 px-4 rounded-lg hover:bg-purple-700 transition-colors font-medium"
           >
-            Explore Lending
+            View Analytics
           </button>
         </div>
       </div>

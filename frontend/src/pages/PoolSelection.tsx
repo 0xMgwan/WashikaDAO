@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Users, Calendar, DollarSign, ArrowRight, Search, Share2, Copy } from 'lucide-react';
+import { Plus, Users, Calendar, DollarSign, ArrowRight, Search, Share2 } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useStacks } from '../hooks/useStacks';
+// import { useStacks } from '../hooks/useStacks'; // Unused for now
 import { usePoolFactory } from '../hooks/usePoolFactory';
 import { openContractCall } from '@stacks/connect';
 import { stringUtf8CV, uintCV, stringAsciiCV, PostConditionMode } from '@stacks/transactions';
@@ -11,7 +11,7 @@ import toast from 'react-hot-toast';
 const PoolSelection: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { userData } = useStacks();
+  // const { userData } = useStacks(); // Unused for now
   const { pools, loading } = usePoolFactory();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -186,7 +186,7 @@ const CreatePoolModal: React.FC<CreatePoolModalProps> = ({ onClose, onSuccess })
     
     try {
       const network = new StacksTestnet();
-      const { makeContractDeploy, broadcastTransaction, AnchorMode } = await import('@stacks/transactions');
+      // const { makeContractDeploy, broadcastTransaction, AnchorMode } = await import('@stacks/transactions');
       
       // Convert days to blocks (approx 144 blocks per day)
       const cycleBlocks = parseInt(formData.cycleDays) * 144;
@@ -196,7 +196,7 @@ const CreatePoolModal: React.FC<CreatePoolModalProps> = ({ onClose, onSuccess })
       const contractName = `rosca-${formData.name.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${Date.now()}`.slice(0, 40);
       
       // Read the template contract code
-      const templateCode = `
+      /* const templateCode = `
 ;; ROSCA Pool: ${formData.name}
 (define-constant contract-owner tx-sender)
 (define-constant contribution-amount u${contributionMicroSTX})
@@ -235,7 +235,7 @@ const CreatePoolModal: React.FC<CreatePoolModalProps> = ({ onClose, onSuccess })
     (try! (stx-transfer? contribution-amount caller (as-contract tx-sender)))
     (map-set round-contributions { member: caller, round: round } true)
     (ok true)))
-`;
+`; */
 
       toast.loading('Step 2/2: Registering in factory...', { id: 'create-pool' });
       

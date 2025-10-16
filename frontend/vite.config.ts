@@ -17,4 +17,16 @@ export default defineConfig({
     port: 3000,
     host: true,
   },
+  build: {
+    outDir: 'dist',
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          stacks: ['@stacks/connect', '@stacks/transactions', '@stacks/network'],
+        },
+      },
+    },
+  },
 })

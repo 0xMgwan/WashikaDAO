@@ -219,50 +219,6 @@ export const useSavingsSTX = (address?: string) => {
   };
 };
 
-export const useLendingCore = (address?: string) => {
-  const { userData } = useStacks();
-  const userAddress = address || userData.address;
-
-  const accountLiquidity = useReadOnlyContract(
-    'lending-core',
-    'get-account-liquidity',
-    userAddress ? [{ type: 'principal', value: userAddress }] : [],
-    { enabled: !!userAddress }
-  );
-
-  const supplyBalance = useReadOnlyContract(
-    'lending-core',
-    'get-supply-balance',
-    userAddress ? [{ type: 'principal', value: userAddress }] : [],
-    { enabled: !!userAddress }
-  );
-
-  const borrowBalance = useReadOnlyContract(
-    'lending-core',
-    'get-borrow-balance',
-    userAddress ? [{ type: 'principal', value: userAddress }] : [],
-    { enabled: !!userAddress }
-  );
-
-  const supplyRate = useReadOnlyContract('lending-core', 'get-supply-rate');
-  const borrowRate = useReadOnlyContract('lending-core', 'get-borrow-rate');
-  const utilizationRate = useReadOnlyContract('lending-core', 'get-utilization-rate');
-  const totalSupply = useReadOnlyContract('lending-core', 'get-total-supply');
-  const totalBorrows = useReadOnlyContract('lending-core', 'get-total-borrows');
-
-  return {
-    accountLiquidity: accountLiquidity.data,
-    supplyBalance: supplyBalance.data,
-    borrowBalance: borrowBalance.data,
-    supplyRate: supplyRate.data,
-    borrowRate: borrowRate.data,
-    utilizationRate: utilizationRate.data,
-    totalSupply: totalSupply.data,
-    totalBorrows: totalBorrows.data,
-    isLoading: accountLiquidity.isLoading || supplyBalance.isLoading || borrowBalance.isLoading,
-    error: accountLiquidity.error || supplyBalance.error || borrowBalance.error,
-  };
-};
 
 export const useOracle = (pair: string) => {
   const price = useReadOnlyContract(

@@ -151,16 +151,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                     Savings
                   </Link>
                 </li>
-                <li>
-                  <Link to="/lending" className="text-sm text-gray-600 hover:text-primary-600">
-                    Lending
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/analytics" className="text-sm text-gray-600 hover:text-primary-600">
-                    Analytics
-                  </Link>
-                </li>
               </ul>
             </div>
 
