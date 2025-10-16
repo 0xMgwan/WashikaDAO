@@ -7,7 +7,6 @@ import {
 } from '@stacks/connect';
 import {
   StacksTestnet,
-  StacksMainnet,
   StacksNetwork,
 } from '@stacks/network';
 import {
@@ -27,10 +26,13 @@ import {
 const appConfig = new AppConfig(['store_write', 'publish_data']);
 export const userSession = new UserSession({ appConfig });
 
-// Network configuration
-export const network: StacksNetwork = process.env.NODE_ENV === 'production' 
-  ? new StacksMainnet() 
-  : new StacksTestnet();
+// Network configuration - Force testnet for now since contracts are deployed there
+export const network: StacksNetwork = new StacksTestnet();
+
+// Alternative: Use environment variable to control network
+// export const network: StacksNetwork = process.env.VITE_STACKS_NETWORK === 'mainnet' 
+//   ? new StacksMainnet() 
+//   : new StacksTestnet();
 
 // Contract addresses (update these with actual deployed addresses)
 export const CONTRACT_ADDRESS = 'STKV0VGBVWGZMGRCQR3SY6R11FED3FW4WRYMWF28';
