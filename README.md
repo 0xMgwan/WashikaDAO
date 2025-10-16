@@ -116,15 +116,15 @@ npm run build
 # Set your private key
 export STACKS_PRIVATE_KEY=your_private_key_here
 
-# Deploy governance contract
-node deploy-governance.js
+# Deploy all core contracts at once
+cd deployment && node deploy.js all
 
-# Deploy community pool
-node deploy-pool.js "Pool Name" 1000000 144 10
-# Args: name, contribution_amount_ustx, cycle_blocks, max_members
-
-# Deploy savings contract
-node deploy-savings.js
+# Or deploy individually
+cd deployment && node deploy.js governance
+cd deployment && node deploy.js savings
+cd deployment && node deploy.js pool-factory
+cd deployment && node deploy.js pool "Pool Name" 5 7 10
+# Args: name, contribution_stx, cycle_days, max_members
 ```
 
 ### **Using the dApp**
@@ -169,11 +169,10 @@ washika-dao/
 │   │   │   └── contracts.js     # Contract configurations
 │   │   └── lib/                 # External library configurations
 │
-├── deployment/                   # Deployment Scripts
-│   ├── deploy-governance.js     # Deploy governance contract
-│   ├── deploy-pool.js           # Deploy community pools
-│   ├── deploy-savings.js        # Deploy savings contract
-│   └── update-frontend-config.js # Update contract addresses
+├── deployment/                   # Unified Deployment System
+│   ├── deploy.js                # Single deployment script for all contracts
+│   ├── README.md                # Deployment guide and documentation
+│   └── deployments.json        # Generated deployment info (gitignored)
 │
 ├── docs/                        # Documentation
 └── README.md                    # This file
@@ -276,15 +275,19 @@ npm run type-check
 
 2. **Deploy Contracts**:
    ```bash
-   # Deploy in order (dependencies first)
-   node deploy-governance.js
-   node deploy-pool.js "Community Pool" 1000000 144 50
-   node deploy-savings.js
+   # Deploy all contracts at once
+   cd deployment && node deploy.js all
+   
+   # Or deploy individually
+   cd deployment && node deploy.js governance
+   cd deployment && node deploy.js pool "Community Pool" 5 144 50
+   cd deployment && node deploy.js savings
    ```
 
-3. **Update Frontend Configuration**:
+3. **Frontend Configuration**:
    ```bash
-   node update-frontend-config.js
+   # Automatic - no manual step needed!
+   # The deployment script updates frontend configuration automatically
    ```
 
 ### **Frontend Deployment**
