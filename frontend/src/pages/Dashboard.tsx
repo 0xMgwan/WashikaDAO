@@ -2,25 +2,23 @@ import React from 'react';
 import { 
   TrendingUp, 
   Users, 
-  DollarSign,
   PiggyBank,
   Vote,
   Heart,
   Globe,
   Shield,
-  Star,
-  ArrowRight,
   CheckCircle,
   Activity,
   Zap,
   Target,
   Award,
   Sparkles,
-  BarChart3
+  BarChart3,
+  ArrowRight
 } from 'lucide-react';
 import { useDAO, useSavingsSTX, useOracle } from '../hooks/useContract';
 import { useStacks } from '../hooks/useStacks';
-import { formatSTX, extractClarityValue } from '../utils/stacks';
+import { extractClarityValue } from '../utils/stacks';
 
 interface StatCardProps {
   title: string;
