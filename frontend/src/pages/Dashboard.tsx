@@ -93,7 +93,7 @@ const Dashboard: React.FC = () => {
   
   // Use real pool data - mock the others for now
   const { proposalCount } = useDAO();
-  const { poolInfo } = useSavingsSTX();
+  const { poolInfo, userShares } = useSavingsSTX();
   const { price: stxPrice } = useOracle('STX-USD');
   
   // Calculate realistic metrics
@@ -120,6 +120,19 @@ const Dashboard: React.FC = () => {
 
   const getPoolBalance = () => {
     return poolInfo ? Number(extractClarityValue(poolInfo)?.['total-stx'] || 0) / 1000000 : 0;
+  };
+
+  const getUserDeposits = () => {
+    if (!userData.isSignedIn || !userShares || !poolInfo) return 0;
+    
+    const shares = Number(extractClarityValue(userShares) || 0);
+    const totalShares = Number(extractClarityValue(poolInfo)?.['total-shares'] || 0);
+    const totalSTX = Number(extractClarityValue(poolInfo)?.['total-stx'] || 0);
+    
+    if (totalShares === 0) return 0;
+    
+    // Calculate user's portion of the pool
+    return (shares * totalSTX) / (totalShares * 1000000); // Convert to STX
   };
 
   return (
@@ -164,7 +177,7 @@ const Dashboard: React.FC = () => {
               WashikaDAO empowers marginalized communities worldwide with decentralized savings, lending, and governance on Bitcoin's secure foundation.
             </p>
             
-            {!userData.isSignedIn ? (
+            {!userData.isSignedIn && (
               <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
                 <div className="flex items-center space-x-4 mb-4">
                   <CheckCircle className="text-green-300" size={20} />
@@ -189,41 +202,7 @@ const Dashboard: React.FC = () => {
                   <ArrowRight size={16} />
                 </button>
               </div>
-            ) : (
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
-                <div className="flex items-center space-x-3 mb-4">
-                  <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
-                    <CheckCircle className="text-white" size={20} />
-                  </div>
-                  <div>
-                    <p className="text-white font-medium">Welcome back to the community!</p>
-                    <p className="text-white/70 text-sm">Connected: {userData.profile?.stxAddress?.testnet?.slice(0, 8)}...</p>
-                  </div>
-                </div>
-              </div>
             )}
-          </div>
-        </div>
-        
-        {/* Community Impact Stats */}
-        <div className="relative z-10 bg-white/5 backdrop-blur-sm border-t border-white/10 p-6">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-white">1,247</div>
-              <div className="text-white/70 text-sm">Community Members</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-white">${calculateTVL()}K</div>
-              <div className="text-white/70 text-sm">Total Value Secured</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-white">156</div>
-              <div className="text-white/70 text-sm">Countries Served</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-white">7.2%</div>
-              <div className="text-white/70 text-sm">Average APY</div>
-            </div>
           </div>
         </div>
       </div>
@@ -282,21 +261,47 @@ const Dashboard: React.FC = () => {
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-white/60 backdrop-blur-sm rounded-xl p-4">
               <div className="text-sm text-gray-600 mb-1">Pool Balance</div>
-              <div className="text-2xl font-bold text-blue-600">
-                {getPoolBalance().toFixed(6)} STX
-              </div>
-              <div className="text-xs text-gray-500 mt-1">
-                ≈ ${(getPoolBalance() * 0.5).toFixed(2)} USD
-              </div>
+              {poolInfo ? (
+                <>
+                  <div className="text-2xl font-bold text-blue-600">
+                    {getPoolBalance().toFixed(6)} STX
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    ≈ ${(getPoolBalance() * 0.5).toFixed(2)} USD
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="text-2xl font-bold text-gray-400">Loading...</div>
+                  <div className="text-xs text-gray-400 mt-1">Fetching data</div>
+                </>
+              )}
             </div>
             <div className="bg-white/60 backdrop-blur-sm rounded-xl p-4">
               <div className="text-sm text-gray-600 mb-1">Your Deposits</div>
-              <div className="text-2xl font-bold text-emerald-600">
-                {userData.isSignedIn ? "Connected" : "0.00"} STX
-              </div>
-              <div className="text-xs text-gray-500 mt-1">
-                {userData.isSignedIn ? "Ready to deposit" : "Connect wallet"}
-              </div>
+              {!userData.isSignedIn ? (
+                <>
+                  <div className="text-2xl font-bold text-gray-400">0.000000 STX</div>
+                  <div className="text-xs text-gray-500 mt-1">Connect wallet</div>
+                </>
+              ) : poolInfo ? (
+                <>
+                  <div className="text-2xl font-bold text-emerald-600">
+                    {getUserDeposits().toFixed(6)} STX
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    {getUserDeposits() > 0 
+                      ? `≈ $${(getUserDeposits() * 0.5).toFixed(2)} USD` 
+                      : "Ready to deposit"
+                    }
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="text-2xl font-bold text-gray-400">Loading...</div>
+                  <div className="text-xs text-gray-400 mt-1">Fetching data</div>
+                </>
+              )}
             </div>
           </div>
         </div>
